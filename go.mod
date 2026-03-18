@@ -5,6 +5,7 @@ go 1.26.1
 require (
 	github.com/disgoorg/disgo v0.19.2
 	github.com/disgoorg/disgolink/v3 v3.1.0
+	github.com/disgoorg/godave v0.1.0
 	github.com/disgoorg/json v1.2.0
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/dotenv-org/godotenvvault v0.6.0
@@ -14,7 +15,6 @@ require (
 require (
 	github.com/CAFxX/httpcompression v0.0.9 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
-	github.com/disgoorg/godave v0.1.0 // indirect
 	github.com/disgoorg/json/v2 v2.0.0 // indirect
 	github.com/disgoorg/omit v1.0.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect

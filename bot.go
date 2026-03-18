@@ -2,9 +2,8 @@ package main
 
 import (
 	"context"
-	"log/slog"
-
 	"errors"
+	"log/slog"
 	"math/rand"
 	"slices"
 	"time"
@@ -62,9 +61,9 @@ func (q *Queue) Next() (lavalink.Track, error) {
 		return lavalink.Track{}, errors.New("Queue is empty...")
 	}
 
-	next_track := q.Tracks[0]
+	nextTrack := q.Tracks[0]
 	q.Tracks = q.Tracks[1:]
-	return next_track, nil
+	return nextTrack, nil
 }
 
 func (q *Queue) Skip() (lavalink.Track, error) {
@@ -88,11 +87,11 @@ func (q *Queue) Remove(index int) error {
 	if len(q.Tracks) <= index {
 		return errors.New("index out of range")
 	}
-	new_tracks := slices.Concat(q.Tracks[:index], q.Tracks[index+1:])
-	if new_tracks == nil {
+	newTracks := slices.Concat(q.Tracks[:index], q.Tracks[index+1:])
+	if newTracks == nil {
 		q.Clear()
 	} else {
-		q.Tracks = new_tracks
+		q.Tracks = newTracks
 	}
 	return nil
 }
@@ -123,14 +122,14 @@ type Bot struct {
 }
 
 func (b *Bot) onApplicationCommand(event *events.ApplicationCommandInteractionCreate) {
-	interaction_data := event.SlashCommandInteractionData()
+	interactionData := event.SlashCommandInteractionData()
 
-	handler, ok := b.CommandHandlers[interaction_data.CommandName()]
+	handler, ok := b.CommandHandlers[interactionData.CommandName()]
 	if !ok {
-		slog.Info("unknown command", slog.String("command", interaction_data.CommandName()))
+		slog.Info("unknown command", slog.String("command", interactionData.CommandName()))
 		return
 	}
-	if err := handler(event, interaction_data); err != nil {
+	if err := handler(event, interactionData); err != nil {
 		slog.Error("error handling command", slog.Any("err", err))
 	}
 }

@@ -265,6 +265,12 @@ func (b *Bot) disconnect(event *events.ApplicationCommandInteractionCreate, data
 		})
 	}
 
+	if err := player.Destroy(context.TODO()); err != nil {
+		return event.CreateMessage(discord.MessageCreate{
+			Content: fmt.Sprintf("Error while disconnecting: `%s`", err),
+		})
+	}
+
 	if err := b.Client.UpdateVoiceState(context.TODO(), *event.GuildID(), nil, false, false); err != nil {
 		return event.CreateMessage(discord.MessageCreate{
 			Content: fmt.Sprintf("Error while disconnecting: `%s`", err),

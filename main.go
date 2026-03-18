@@ -19,7 +19,9 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/gateway"
+	"github.com/disgoorg/disgo/voice"
 	"github.com/disgoorg/disgolink/v3/disgolink"
+	"github.com/disgoorg/godave"
 	"github.com/disgoorg/snowflake/v2"
 )
 
@@ -54,6 +56,9 @@ func main() {
 		bot.WithEventListenerFunc(robot.onApplicationCommand),
 		bot.WithEventListenerFunc(robot.onVoiceStateUpdate),
 		bot.WithEventListenerFunc(robot.onVoiceServerUpdate),
+		bot.WithVoiceManagerConfigOpts(
+			voice.WithDaveSessionCreateFunc(godave.NewNoopSession),
+		),
 	)
 	if err != nil {
 		slog.Error("error while building disgo client", slog.Any("err", err))
@@ -120,7 +125,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	server(&robot, guildID)
+	go server(&robot, guildID)
 
 	slog.Info("DisGo example is now running. Press CTRL-C to exit.", slog.String("node_version", version), slog.String("node_session_id", node.SessionID()))
 	s := make(chan os.Signal, 1)
