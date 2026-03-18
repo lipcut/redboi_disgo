@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="en" data-theme="abyss">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Redboi Controller</title>
+
+        <script
+            type="module"
+            src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
+        ></script>
+
+        <!-- Tailwind + daisyUI CDN -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/daisyui@5"
+            rel="stylesheet"
+            type="text/css"
+        />
+        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+        <link
+            href="https://cdn.jsdelivr.net/npm/daisyui@5/themes.css"
+            rel="stylesheet"
+            type="text/css"
+        />
+    </head>
+    <body
+        class="min-h-screen bg-base-200 text-base-content text-[18px] md:text-[19px]"
+    >
+        <main
+            class="container mx-auto max-w-3xl px-4 py-8 space-y-6"
+            data-signals="{identifier: ''}"
+            data-on-intersect="@get('/api/sync')"
+            data-on-interval="@get('/api/sync')"
+        >
+            <header class="flex items-center justify-between gap-3">
+                <h1 class="text-4xl font-bold">RedBoi</h1>
+                <!-- Theme menu button -->
+                <div class="dropdown dropdown-end">
+                    <div tabindex="0" role="button" class="btn btn-ghost">
+                        Theme
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M19 9l-7 7-7-7"
+                            />
+                        </svg>
+                    </div>
+
+                    <ul
+                        tabindex="0"
+                        class="dropdown-content menu bg-base-200 rounded-box z-50 mt-2 w-70 max-h-96 overflow-y-auto p-2 shadow-2xl border border-base-300"
+                    >
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#0b1727] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#5ab1ef]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#7dd3fc]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#134e7a]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#1f2937]"
+                                    ></span>
+                                </span>
+                                <span>abyss</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="abyss"
+                                    aria-label="abyss"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-white p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#570df8]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#f000b8]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#37cdbe]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#fbbd23]"
+                                    ></span>
+                                </span>
+                                <span>light</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="light"
+                                    aria-label="light"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#1d232a] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#661ae6]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#d926aa]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#1fb2a5]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#d99330]"
+                                    ></span>
+                                </span>
+                                <span>dark</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="dark"
+                                    aria-label="dark"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#faf7f5] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#65c3c8]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#ef9fbc]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#eeaf3a]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#291334]"
+                                    ></span>
+                                </span>
+                                <span>cupcake</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="cupcake"
+                                    aria-label="cupcake"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#ffffff] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#e0a82e]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#f9d72f]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#181830]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#d34084]"
+                                    ></span>
+                                </span>
+                                <span>bumblebee</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="bumblebee"
+                                    aria-label="bumblebee"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#ffffff] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#66cc8a]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#377cfb]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#ea5234]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#333c4d]"
+                                    ></span>
+                                </span>
+                                <span>emerald</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="emerald"
+                                    aria-label="emerald"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#ffffff] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#4b6bfb]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#7b92b2]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#67cba0]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#181a2a]"
+                                    ></span>
+                                </span>
+                                <span>corporate</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="corporate"
+                                    aria-label="corporate"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#2d1b69] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#e779c1]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#58c7f3]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#f3cc30]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#201047]"
+                                    ></span>
+                                </span>
+                                <span>synthwave</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="synthwave"
+                                    aria-label="synthwave"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#e4d8b4] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#ef9995]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#a4cbb4]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#dc8850]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#282425]"
+                                    ></span>
+                                </span>
+                                <span>retro</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="retro"
+                                    aria-label="retro"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#ffee00] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#ff7598]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#75d1f0]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#c07cff]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#000000]"
+                                    ></span>
+                                </span>
+                                <span>cyberpunk</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="cyberpunk"
+                                    aria-label="cyberpunk"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#fdf2f8] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#e96d7b]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#a991f7]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#88dbdd]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#aa4465]"
+                                    ></span>
+                                </span>
+                                <span>valentine</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="valentine"
+                                    aria-label="valentine"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#212121] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#f28c18]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#6d3a9c]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#51a800]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#ff7598]"
+                                    ></span>
+                                </span>
+                                <span>halloween</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="halloween"
+                                    aria-label="halloween"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#e9e7e7] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#5c7f67]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#ecf4e7]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#fa99ca]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#291334]"
+                                    ></span>
+                                </span>
+                                <span>garden</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="garden"
+                                    aria-label="garden"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#171212] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#1eb854]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#1fd65f]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#8ba160]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#171212]"
+                                    ></span>
+                                </span>
+                                <span>forest</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="forest"
+                                    aria-label="forest"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#d9f0ff] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#09ecf3]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#966fb3]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#ffe999]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#345da7]"
+                                    ></span>
+                                </span>
+                                <span>aqua</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="aqua"
+                                    aria-label="aqua"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#ffffff] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#0d0d0d]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#1a1a1a]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#4a4a4a]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#9f9f9f]"
+                                    ></span>
+                                </span>
+                                <span>lofi</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="lofi"
+                                    aria-label="lofi"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#ffffff] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#d1c1d7]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#f6cbd1]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#b4e9d6]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#70acc7]"
+                                    ></span>
+                                </span>
+                                <span>pastel</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="pastel"
+                                    aria-label="pastel"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#ffffff] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#6e0b75]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#007ebd]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#f8860d]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#333c4d]"
+                                    ></span>
+                                </span>
+                                <span>fantasy</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="fantasy"
+                                    aria-label="fantasy"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#ffffff] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#b8b8b8]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#8f8f8f]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#5c5c5c]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#1f2937]"
+                                    ></span>
+                                </span>
+                                <span>wireframe</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="wireframe"
+                                    aria-label="wireframe"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#000000] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#343232]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#7b7b7b]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#d9d9d9]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#ffffff]"
+                                    ></span>
+                                </span>
+                                <span>black</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="black"
+                                    aria-label="black"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#09090b] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#ffffff]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#c8a26e]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#6b7280]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#27272a]"
+                                    ></span>
+                                </span>
+                                <span>luxury</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="luxury"
+                                    aria-label="luxury"
+                                />
+                            </label>
+                        </li>
+                        <li>
+                            <label
+                                class="btn btn-sm btn-block btn-ghost justify-start gap-3 px-3"
+                            >
+                                <span
+                                    class="inline-grid h-5 w-5 grid-cols-2 gap-0.5 rounded-md bg-[#282a36] p-1"
+                                >
+                                    <span
+                                        class="rounded-full bg-[#ff79c6]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#bd93f9]"
+                                    ></span>
+                                    <span
+                                        class="rounded-full bg-[#8be9fd]"
+                                    ></span
+                                    ><span
+                                        class="rounded-full bg-[#50fa7b]"
+                                    ></span>
+                                </span>
+                                <span>dracula</span>
+                                <input
+                                    type="radio"
+                                    name="theme-dropdown"
+                                    class="theme-controller sr-only"
+                                    value="dracula"
+                                    aria-label="dracula"
+                                />
+                            </label>
+                        </li>
+                    </ul>
+                </div>
+            </header>
+
+            <!-- Now Playing -->
+            <section class="card bg-base-100 shadow-sm">
+                <div class="card-body">
+                    <h2
+                        class="text-lg card-title opacity-90"
+                        id="nowPlayingSong"
+                    ></h2>
+                </div>
+            </section>
+
+            <!-- Controls -->
+            <section class="card bg-base-100 shadow-sm">
+                <div class="card-body space-y-4">
+                    <div
+                        class="join w-full"
+                        data-on:keydown="evt.keyCode == 13 && (() => { @post('/api/enqueue'); $identifier = ''})() "
+                    >
+                        <input
+                            type="text"
+                            placeholder="YouTube URL or Search Query"
+                            class="input input-bordered join-item w-full"
+                            data-bind="identifier"
+                        />
+                        <button
+                            class="btn btn-primary join-item"
+                            data-attr:disabled="$identifier == ''"
+                            data-on:click="@post('/api/enqueue'); $identifier = ''"
+                        >
+                            Enqueue
+                        </button>
+                    </div>
+
+                    <div class="flex gap-2 join place-content-center">
+                        <button
+                            class="btn btn-outline join-item"
+                            data-on:click="@post('/api/toggle-play')"
+                            id="play-pause-btn"
+                        ></button>
+                        <button
+                            class="btn btn-outline join-item"
+                            data-on:click="@post('/api/skip')"
+                        >
+                            Next
+                        </button>
+                        <button
+                            class="btn btn-warning btn-outline join-item"
+                            data-on:click="@post('/api/stop')"
+                        >
+                            Stop
+                        </button>
+                        <button
+                            class="btn btn-error btn-outline join-item"
+                            data-on:click="@post('/api/clear')"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Queue -->
+            <section class="card bg-base-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title text-lg">Queue</h3>
+                    <ul
+                        class="list bg-base-100 rounded-box shadow-md"
+                        id="queue"
+                    ></ul>
+                </div>
+            </section>
+        </main>
+    </body>
+</html>
