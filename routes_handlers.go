@@ -4,16 +4,27 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"net/http"
 	"slices"
+	"strconv"
 	"time"
 
 	"github.com/disgoorg/disgolink/v3/disgolink"
 	"github.com/disgoorg/disgolink/v3/lavalink"
 	"github.com/disgoorg/snowflake/v2"
+	"github.com/starfederation/datastar-go/datastar"
 )
 
 // Proxy the bot to hijack the discord
-type Bogus Bot
+type Bogus struct {
+	Bot
+	currentGuildID snowflake.ID
+}
+
+type Store struct {
+	Identifier string `json:"identifier"`
+}
 
 func (b *Bogus) loadTrack(identifier string) ([]lavalink.Track, error) {
 	if !urlPattern.MatchString(identifier) && !searchPattern.MatchString(identifier) {
@@ -46,127 +57,210 @@ func (b *Bogus) loadTrack(identifier string) ([]lavalink.Track, error) {
 	return result_tracks, result_error
 }
 
-func (b *Bogus) play(identifier string, guildID snowflake.ID) (*lavalink.Track, error) {
-	player := b.Lavalink.ExistingPlayer(guildID)
+func (b *Bogus) nowPlaying(w http.ResponseWriter, r *http.Request) {
+	player := b.Lavalink.ExistingPlayer(b.currentGuildID)
 	if player == nil {
-		return nil, errors.New("No player found")
+		slog.Error("No player found")
+		return
 	}
-
-	tracks, err := b.loadTrack(identifier)
-	if err != nil {
-		return nil, err
+	track := player.Track()
+	sse := datastar.NewSSE(w, r)
+	if track == nil {
+		err := sse.PatchElements(`
+				<h2
+                   class="text-lg card-title opacity-90"
+                   id="nowPlayingSong"
+               >Nothing Playing...</h2>
+				`)
+		if err != nil {
+			slog.Error("fail to patch nowPlaying State", slog.Any("err", err))
+			return
+		}
+	} else {
+		err := sse.PatchElements(fmt.Sprintf(`
+				<h2
+                   class="text-lg card-title opacity-90"
+                   id="nowPlayingSong"
+               >
+					<div class="text-nowrap">%v</div>
+					<div class="uppercase font-semibold opacity-60 truncate">%v</div>
+				</h2>
+				`,
+			track.Info.Author, track.Info.Title))
+		if err != nil {
+			slog.Error("fail to patch nowPlaying State", slog.Any("err", err))
+			return
+		}
 	}
-
-	b.Lavalink.Player(guildID).Update(context.TODO(), lavalink.WithTrack(tracks[0]))
-
-	return &tracks[0], err
 }
 
-func (b *Bogus) enqueue(identifier string, guildID snowflake.ID) error {
-	player := b.Lavalink.ExistingPlayer(guildID)
-	if player == nil {
-		return errors.New("No player found")
+func (b *Bogus) queue(w http.ResponseWriter, r *http.Request) {
+	queue := b.Queues.Get(b.currentGuildID)
+	var elements string
+	for idx, track := range queue.Tracks {
+		trackID := idx + 1
+		element := fmt.Sprintf(`
+			<li class="list-row">
+		    <div><img class="mask mask-squircle size-10" src="%v"/></div>
+		    <div>
+				<div>%v</div>
+				<div class="text-xs uppercase font-semibold opacity-60">%v</div>
+			</div>
+			<button class="btn btn-ghost btn-error" data-on:click="@delete('/api/remove-track/%d')">
+				Remove
+			</button>
+			</li>
+			`, *track.Info.ArtworkURL, track.Info.Author, track.Info.Title, trackID)
+		elements += element
 	}
 
-	tracks, err := b.loadTrack(identifier)
+	sse := datastar.NewSSE(w, r)
+	err := sse.PatchElements(
+		elements,
+		datastar.WithModeInner(),
+		datastar.WithSelectorID("queue"),
+	)
 	if err != nil {
-		return err
+		slog.Error("fail to patch queue status", slog.Any("err", err))
+		return
+	}
+}
+
+func (b *Bogus) checkPaused(w http.ResponseWriter, r *http.Request) {
+	player := b.Lavalink.ExistingPlayer(b.currentGuildID)
+	if player == nil {
+		slog.Error("No player found")
+		return
+	}
+	message := "Pause"
+	if player.Paused() {
+		message = "Play"
+	}
+	sse := datastar.NewSSE(w, r)
+	err := sse.PatchElementf(
+		`<button
+				class="btn btn-outline join-item"
+				data-on:click="@post('/api/toggle-play')"
+				id="play-pause-btn"
+			>%v</button>`, message)
+	if err != nil {
+		slog.Error("fail to patch pause State", slog.Any("err", err))
+		return
+	}
+}
+
+func (b *Bogus) sync(w http.ResponseWriter, r *http.Request) {
+	b.checkPaused(w, r)
+	b.nowPlaying(w, r)
+	b.queue(w, r)
+}
+
+func (b *Bogus) enqueue(w http.ResponseWriter, r *http.Request) {
+	player := b.Lavalink.ExistingPlayer(b.currentGuildID)
+	if player == nil {
+		slog.Error("No player found")
+		return
 	}
 
+	store := &Store{}
+	if err := datastar.ReadSignals(r, store); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	tracks, err := b.loadTrack(store.Identifier)
+	if err != nil {
+		slog.Error("failed to enqueue", slog.Any("err", err))
+		return
+	}
+
+	queue := b.Queues.Get(b.currentGuildID)
 	if player.Track() != nil {
-		b.Queues.Get(guildID).Append(tracks...)
+		queue.Append(tracks...)
 	} else {
-		b.Lavalink.Player(guildID).Update(context.TODO(), lavalink.WithTrack(tracks[0]))
+		player.Update(context.TODO(), lavalink.WithTrack(tracks[0]))
 		if len(tracks[1:]) != 0 {
-			b.Queues.Get(guildID).Append(tracks[1:]...)
+			queue.Append(tracks[1:]...)
 		}
 	}
 
-	return err
+	b.nowPlaying(w, r)
+	b.queue(w, r)
 }
 
-func (b *Bogus) togglePlay(guildID snowflake.ID) error {
-	player := b.Lavalink.ExistingPlayer(guildID)
+func (b *Bogus) togglePlay(w http.ResponseWriter, r *http.Request) {
+	player := b.Lavalink.ExistingPlayer(b.currentGuildID)
 	if player == nil {
-		return errors.New("No player found")
+		slog.Error("No player found")
+		return
 	}
 
 	err := player.Update(context.TODO(), lavalink.WithPaused(!player.Paused()))
 	if err != nil {
-		return err
+		slog.Error("failed to pause/play", slog.Any("err", err))
+		return
 	}
 
-	return nil
+	b.checkPaused(w, r)
 }
 
-func (b *Bogus) queue(guildID snowflake.ID) ([]lavalink.Track, error) {
-	queue := b.Queues.Get(guildID)
-	if queue == nil {
-		return nil, errors.New("No player found")
-	}
-	return queue.Tracks, nil
-}
-
-func (b *Bogus) skip(guildID snowflake.ID) error {
-	player := b.Lavalink.ExistingPlayer(guildID)
-	queue := b.Queues.Get(guildID)
-	if player == nil || queue == nil {
-		return errors.New("No player found")
+func (b *Bogus) skip(w http.ResponseWriter, r *http.Request) {
+	player := b.Lavalink.ExistingPlayer(b.currentGuildID)
+	if player == nil {
+		slog.Error("No player found")
+		return
 	}
 
-	track, err := queue.Skip()
+	track, err := b.Queues.Get(player.GuildID()).Next()
+	updateOption := lavalink.WithNullTrack()
+	if err == nil {
+		updateOption = lavalink.WithTrack(track)
+	}
+
+	err = player.Update(context.TODO(), updateOption)
 	if err != nil {
-		if err := player.Update(context.TODO(), lavalink.WithNullTrack()); err != nil {
-			return err
-		}
-	} else {
-		if err := player.Update(context.TODO(), lavalink.WithTrack(track)); err != nil {
-			return err
-		}
+		slog.Error("failed to skip the song", slog.Any("err", err))
+		return
 	}
 
-	return nil
+	b.nowPlaying(w, r)
+	b.queue(w, r)
 }
 
-func (b *Bogus) stop(guildID snowflake.ID) error {
-	player := b.Lavalink.ExistingPlayer(guildID)
+func (b *Bogus) stop(w http.ResponseWriter, r *http.Request) {
+	player := b.Lavalink.ExistingPlayer(b.currentGuildID)
 	if player == nil {
-		return errors.New("No player found")
+		slog.Error("No player found")
+		return
 	}
 
-	if err := player.Update(context.TODO(), lavalink.WithNullTrack()); err != nil {
-		return err
+	err := player.Update(context.TODO(), lavalink.WithNullTrack())
+	if err != nil {
+		slog.Error("failed to stop the song", slog.Any("err", err))
+		return
 	}
 
-	return nil
+	b.nowPlaying(w, r)
+	b.queue(w, r)
 }
 
-func (b *Bogus) nowPlaying(guildID snowflake.ID) (*lavalink.Track, error) {
-	player := b.Lavalink.ExistingPlayer(guildID)
-	if player == nil {
-		return nil, errors.New("No player found")
+func (b *Bogus) removeTrack(w http.ResponseWriter, r *http.Request) {
+	track_id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		slog.Error("failed to parse id for remove track", slog.Any("err", err))
+		return
 	}
 
-	track := player.Track()
-	if track == nil {
-		return nil, errors.New("No track playing")
+	err = b.Queues.Get(b.currentGuildID).Remove(int(track_id))
+	if err != nil {
+		slog.Error("failed to remove track", slog.Any("err", err))
+		return
 	}
 
-	return track, nil
+	b.queue(w, r)
 }
 
-func (b *Bogus) removeTrack(guildID snowflake.ID, index int64) error {
-	return b.Queues.Get(guildID).Remove(int(index))
-}
-
-func (b *Bogus) checkPaused(guildID snowflake.ID) (bool, error) {
-	player := b.Lavalink.ExistingPlayer(guildID)
-	if player == nil {
-		return false, errors.New("No player found")
-	}
-	return player.Paused(), nil
-}
-
-func (b *Bogus) clear(guildID snowflake.ID) {
-	b.Queues.Get(guildID).Clear()
+func (b *Bogus) clear(w http.ResponseWriter, r *http.Request) {
+	b.Queues.Get(b.currentGuildID).Clear()
+	b.queue(w, r)
 }

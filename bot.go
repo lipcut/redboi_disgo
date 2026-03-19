@@ -3,16 +3,22 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"math/rand"
 	"slices"
 	"time"
 
+	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/cache"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/disgo/gateway"
+	"github.com/disgoorg/disgo/voice"
 	"github.com/disgoorg/disgolink/v3/disgolink"
 	"github.com/disgoorg/disgolink/v3/lavalink"
+	"github.com/disgoorg/godave"
 	"github.com/disgoorg/snowflake/v2"
 )
 
@@ -148,4 +154,64 @@ func (b *Bot) onVoiceServerUpdate(event *events.VoiceServerUpdate) {
 		return
 	}
 	b.Lavalink.OnVoiceServerUpdate(context.TODO(), event.GuildID, event.Token, *event.Endpoint)
+}
+
+func discordBot(token string) (Bot, error) {
+	robot := Bot{
+		Queues: make(map[snowflake.ID]*Queue),
+	}
+
+	client, err := disgo.New(token,
+		bot.WithGatewayConfigOpts(
+			gateway.WithIntents(gateway.IntentsGuild),
+		),
+		bot.WithCacheConfigOpts(
+			cache.WithCaches(cache.FlagVoiceStates),
+		),
+		bot.WithEventListenerFunc(robot.onApplicationCommand),
+		bot.WithEventListenerFunc(robot.onVoiceStateUpdate),
+		bot.WithEventListenerFunc(robot.onVoiceServerUpdate),
+		bot.WithVoiceManagerConfigOpts(
+			voice.WithDaveSessionCreateFunc(godave.NewNoopSession),
+		),
+	)
+	if err != nil {
+		return Bot{}, fmt.Errorf("error while building disgo client: %w", err)
+	}
+
+	robot.Client = *client
+
+	registerCommands(client)
+
+	robot.Lavalink = disgolink.New(client.ApplicationID,
+		disgolink.WithListenerFunc(robot.onPlayerPause),
+		disgolink.WithListenerFunc(robot.onPlayerResume),
+		disgolink.WithListenerFunc(robot.onTrackStart),
+		disgolink.WithListenerFunc(robot.onTrackEnd),
+		disgolink.WithListenerFunc(robot.onTrackException),
+		disgolink.WithListenerFunc(robot.onTrackStuck),
+		disgolink.WithListenerFunc(robot.onWebSocketClosed),
+		disgolink.WithListenerFunc(robot.onUnknownEvent),
+	)
+
+	robot.CommandHandlers = map[string]func(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error{
+		"play":        robot.play,
+		"enqueue":     robot.enqueue,
+		"pause":       robot.pause,
+		"now-playing": robot.nowPlaying,
+		"stop":        robot.stop,
+		"disconnect":  robot.disconnect,
+		"players":     robot.players,
+		"queue":       robot.queue,
+		"clear-queue": robot.clearQueue,
+		"queue-type":  robot.queueType,
+		"shuffle":     robot.shuffle,
+		"seek":        robot.seek,
+		"volume":      robot.volume,
+		"skip":        robot.skip,
+		"bass-boost":  robot.bassBoost,
+		"summon":      robot.summon,
+	}
+
+	return robot, nil
 }
