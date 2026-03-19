@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 	"math/rand"
+	"net/http"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/disgoorg/disgo"
@@ -125,6 +127,7 @@ type Bot struct {
 	Lavalink        disgolink.Client
 	CommandHandlers map[string]func(*events.ApplicationCommandInteractionCreate, discord.SlashCommandInteractionData) error
 	Queues          Guild2Queue
+	PublishClient   *http.Client // for publishing updates to the websocket
 }
 
 func (b *Bot) onApplicationCommand(event *events.ApplicationCommandInteractionCreate) {
@@ -137,6 +140,16 @@ func (b *Bot) onApplicationCommand(event *events.ApplicationCommandInteractionCr
 	}
 	if err := handler(event, interactionData); err != nil {
 		slog.Error("error handling command", slog.Any("err", err))
+	}
+
+	if b.PublishClient != nil {
+		res, err := b.PublishClient.Post("http://localhost:8080/api/publish", "text/plain", strings.NewReader("update!"))
+		if err != nil {
+			slog.Error("error posting update", slog.Any("err", err))
+		} else {
+			slog.Info("update posted", slog.Any("res", res))
+		}
+		res.Body.Close()
 	}
 }
 
@@ -158,7 +171,8 @@ func (b *Bot) onVoiceServerUpdate(event *events.VoiceServerUpdate) {
 
 func discordBot(token string) (Bot, error) {
 	robot := Bot{
-		Queues: make(map[snowflake.ID]*Queue),
+		Queues:        make(map[snowflake.ID]*Queue),
+		PublishClient: &http.Client{},
 	}
 
 	client, err := disgo.New(token,

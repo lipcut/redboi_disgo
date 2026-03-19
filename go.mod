@@ -3,13 +3,16 @@ module redboi_disgo
 go 1.26.1
 
 require (
+	github.com/coder/websocket v1.8.14
 	github.com/disgoorg/disgo v0.19.2
 	github.com/disgoorg/disgolink/v3 v3.1.0
 	github.com/disgoorg/godave v0.1.0
 	github.com/disgoorg/json v1.2.0
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/dotenv-org/godotenvvault v0.6.0
+	github.com/go-acme/lego/v4 v4.33.0
 	github.com/starfederation/datastar-go v1.1.0
+	golang.org/x/time v0.15.0
 )
 
 require (

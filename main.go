@@ -23,10 +23,8 @@ func main() {
 	}
 
 	var (
-		Token = os.Getenv("TOKEN")
-
-		guildID = snowflake.GetEnv("GUILD_ID")
-
+		Token         = os.Getenv("TOKEN")
+		guildID       = snowflake.GetEnv("GUILD_ID")
 		NodeName      = os.Getenv("NODE_NAME")
 		NodeAddress   = os.Getenv("NODE_ADDRESS")
 		NodePassword  = os.Getenv("NODE_PASSWORD")
@@ -39,8 +37,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
+
 	if err = robot.Client.OpenGateway(ctx); err != nil {
 		slog.Error("failed to open gateway", slog.Any("err", err))
 		os.Exit(1)

@@ -26,21 +26,24 @@ func server(robot Bot, guildID snowflake.ID) {
 			http.ServeFile(w, r, "index.html")
 		}
 	}
-	http.HandleFunc("/", homepage)
-	http.HandleFunc("/api/now-playing", bogus.nowPlaying)
-	http.HandleFunc("/api/queue", bogus.queue)
-	http.HandleFunc("/api/check-paused", bogus.checkPaused)
-	http.HandleFunc("/api/enqueue", bogus.enqueue)
-	http.HandleFunc("/api/toggle-play", bogus.togglePlay)
-	http.HandleFunc("/api/skip", bogus.skip)
-	http.HandleFunc("/api/stop", bogus.stop)
-	http.HandleFunc("/api/clear", bogus.clear)
-	http.HandleFunc("/api/remove-track/{id}", bogus.removeTrack)
-	http.HandleFunc("/api/sync", bogus.sync)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", homepage)
+	mux.HandleFunc("/api/now-playing", bogus.nowPlaying)
+	mux.HandleFunc("/api/queue", bogus.queue)
+	mux.HandleFunc("/api/check-paused", bogus.checkPaused)
+	mux.HandleFunc("/api/enqueue", bogus.enqueue)
+	mux.HandleFunc("/api/toggle-play", bogus.togglePlay)
+	mux.HandleFunc("/api/skip", bogus.skip)
+	mux.HandleFunc("/api/stop", bogus.stop)
+	mux.HandleFunc("/api/clear", bogus.clear)
+	mux.HandleFunc("/api/remove-track/{id}", bogus.removeTrack)
+	mux.HandleFunc("/api/sync", bogus.sync)
+	WsHubSetup(mux)
 
 	slog.Info(fmt.Sprintf(
 		"Open your browser to: http://%s/",
 		serverAddress,
 	))
-	log.Fatal(http.ListenAndServe(serverAddress, nil))
+	log.Fatal(http.ListenAndServe(serverAddress, mux))
 }

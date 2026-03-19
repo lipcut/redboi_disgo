@@ -127,21 +127,20 @@ func (b *Bot) bassBoost(event *events.ApplicationCommandInteractionCreate, data 
 
 func (b *Bot) skip(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
 	player := b.Lavalink.ExistingPlayer(*event.GuildID())
-	queue := b.Queues.Get(*event.GuildID())
-	if player == nil || queue == nil {
+	if player == nil {
 		return event.CreateMessage(discord.MessageCreate{
 			Content: "No player found",
 		})
 	}
 
+	queue := b.Queues.Get(*event.GuildID())
 	track, err := queue.Skip()
+	updateOption := lavalink.WithTrack(track)
 	if err != nil {
-		return event.CreateMessage(discord.MessageCreate{
-			Content: err.Error(),
-		})
+		updateOption = lavalink.WithNullTrack()
 	}
 
-	if err := player.Update(context.TODO(), lavalink.WithTrack(track)); err != nil {
+	if err := player.Update(context.TODO(), updateOption); err != nil {
 		return event.CreateMessage(discord.MessageCreate{
 			Content: fmt.Sprintf("Error while skipping track: `%s`", err),
 		})

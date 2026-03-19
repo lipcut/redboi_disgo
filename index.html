@@ -22,6 +22,50 @@
             rel="stylesheet"
             type="text/css"
         />
+        <script>
+            function dial() {
+                const conn = new WebSocket(
+                    `ws://${location.host}/api/subscribe`,
+                );
+
+                conn.addEventListener("close", (event) => {
+                    if (event.code !== 1001) {
+                        setTimeout(dial, 1000);
+                    }
+                });
+                conn.addEventListener("open", (event) => {
+                    console.info("websocket connected");
+                });
+
+                // This is where we handle messages received.
+                conn.addEventListener("message", async (event) => {
+                    if (typeof event.data !== "string") {
+                        console.error(
+                            "unexpected message type",
+                            typeof event.data,
+                        );
+                        return;
+                    }
+
+                    if (event.data === "update!")
+                        document.getElementById("ds-sync-trigger").click();
+                });
+            }
+
+            async function publishToPeers() {
+                const res = await fetch("/api/publish", {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain; charset=utf-8" },
+                    body: "update!",
+                    credentials: "same-origin",
+                });
+                if (!res.ok) {
+                    console.error("publish failed", res.status);
+                }
+            }
+
+            dial();
+        </script>
     </head>
     <body
         class="min-h-screen bg-base-200 text-base-content text-[18px] md:text-[19px]"
@@ -30,8 +74,15 @@
             class="container mx-auto max-w-3xl px-4 py-8 space-y-6"
             data-signals="{identifier: ''}"
             data-on-intersect="@get('/api/sync')"
-            data-on-interval="@get('/api/sync')"
         >
+            <!-- Magic buttons (not visible) -->
+            <button
+                id="ds-sync-trigger"
+                style="display: none"
+                data-on:click="@get('/api/sync')"
+            ></button>
+
+            <!--style="display: none"-->
             <header class="flex items-center justify-between gap-3">
                 <h1 class="text-4xl font-bold">RedBoi</h1>
                 <!-- Theme menu button -->
@@ -737,7 +788,7 @@
                 <div class="card-body space-y-4">
                     <div
                         class="join w-full"
-                        data-on:keydown="evt.keyCode == 13 && (() => { @post('/api/enqueue'); $identifier = ''})() "
+                        data-on:keydown="evt.keyCode == 13 && (() => { @post('/api/enqueue'); $identifier = ''; publishToPeers() })() "
                     >
                         <input
                             type="text"
@@ -748,7 +799,7 @@
                         <button
                             class="btn btn-primary join-item"
                             data-attr:disabled="$identifier == ''"
-                            data-on:click="@post('/api/enqueue'); $identifier = ''"
+                            data-on:click="@post('/api/enqueue'); $identifier = ''; publishToPeers()"
                         >
                             Enqueue
                         </button>
@@ -757,24 +808,24 @@
                     <div class="flex gap-2 join place-content-center">
                         <button
                             class="btn btn-outline join-item"
-                            data-on:click="@post('/api/toggle-play')"
+                            data-on:click="@get('/api/toggle-play'); publishToPeers()"
                             id="play-pause-btn"
                         ></button>
                         <button
                             class="btn btn-outline join-item"
-                            data-on:click="@post('/api/skip')"
+                            data-on:click="@get('/api/skip'); publishToPeers()"
                         >
                             Next
                         </button>
                         <button
                             class="btn btn-warning btn-outline join-item"
-                            data-on:click="@post('/api/stop')"
+                            data-on:click="@get('/api/stop'); publishToPeers()"
                         >
                             Stop
                         </button>
                         <button
                             class="btn btn-error btn-outline join-item"
-                            data-on:click="@post('/api/clear')"
+                            data-on:click="@post('/api/clear'); publishToPeers()"
                         >
                             Clear
                         </button>

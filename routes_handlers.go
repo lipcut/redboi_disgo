@@ -106,7 +106,7 @@ func (b *Bogus) queue(w http.ResponseWriter, r *http.Request) {
 				<div>%v</div>
 				<div class="text-xs uppercase font-semibold opacity-60">%v</div>
 			</div>
-			<button class="btn btn-ghost btn-error" data-on:click="@delete('/api/remove-track/%d')">
+			<button class="btn btn-ghost btn-error" data-on:click="@delete('/api/remove-track/%d'); publishToPeers()">
 				Remove
 			</button>
 			</li>
@@ -140,7 +140,7 @@ func (b *Bogus) checkPaused(w http.ResponseWriter, r *http.Request) {
 	err := sse.PatchElementf(
 		`<button
 				class="btn btn-outline join-item"
-				data-on:click="@post('/api/toggle-play')"
+				data-on:click="@get('/api/toggle-play'); publishToPeers()"
 				id="play-pause-btn"
 			>%v</button>`, message)
 	if err != nil {
@@ -251,7 +251,7 @@ func (b *Bogus) removeTrack(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = b.Queues.Get(b.currentGuildID).Remove(int(track_id))
+	err = b.Queues.Get(b.currentGuildID).Remove(int(track_id - 1))
 	if err != nil {
 		slog.Error("failed to remove track", slog.Any("err", err))
 		return
