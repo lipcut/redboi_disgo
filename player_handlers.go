@@ -15,10 +15,12 @@ func (b *Bot) onPlayerPause(player disgolink.Player, event lavalink.PlayerPauseE
 
 func (b *Bot) onPlayerResume(player disgolink.Player, event lavalink.PlayerResumeEvent) {
 	slog.Info("player resumed", slog.Any("event", event))
+	b.publish()
 }
 
 func (b *Bot) onTrackStart(player disgolink.Player, event lavalink.TrackStartEvent) {
 	slog.Info("track started", slog.Any("event", event))
+	b.publish()
 }
 
 func (b *Bot) onTrackEnd(player disgolink.Player, event lavalink.TrackEndEvent) {
@@ -49,6 +51,7 @@ func (b *Bot) onTrackEnd(player disgolink.Player, event lavalink.TrackEndEvent) 
 	if err := player.Update(context.TODO(), lavalink.WithTrack(nextTrack)); err != nil {
 		slog.Error("Failed to play next track", slog.Any("err", err))
 	}
+	b.publish()
 }
 
 func (b *Bot) onTrackException(player disgolink.Player, event lavalink.TrackExceptionEvent) {
