@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -264,12 +265,6 @@ func (b *Bot) disconnect(event *events.ApplicationCommandInteractionCreate, data
 		})
 	}
 
-	if err := player.Destroy(context.TODO()); err != nil {
-		return event.CreateMessage(discord.MessageCreate{
-			Content: fmt.Sprintf("Error while disconnecting: `%s`", err),
-		})
-	}
-
 	if err := b.Client.UpdateVoiceState(context.TODO(), *event.GuildID(), nil, false, false); err != nil {
 		return event.CreateMessage(discord.MessageCreate{
 			Content: fmt.Sprintf("Error while disconnecting: `%s`", err),
@@ -323,7 +318,7 @@ func (b *Bot) voiceStateCheck(event *events.ApplicationCommandInteractionCreate,
 	return &voiceState, nil
 }
 
-func (b *Bot) loadTrack(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) *lavalink.Track {
+func (b *Bot) loadTrack(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) []lavalink.Track {
 	identifier := data.String("identifier")
 	if source, ok := data.OptString("source"); ok {
 		identifier = lavalink.SearchType(source).Apply(identifier)
@@ -334,25 +329,25 @@ func (b *Bot) loadTrack(event *events.ApplicationCommandInteractionCreate, data 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var toPlay *lavalink.Track
+	tracks := []lavalink.Track{}
 	b.Lavalink.BestNode().LoadTracksHandler(ctx, identifier, disgolink.NewResultHandler(
 		func(track lavalink.Track) {
 			_, _ = b.Client.Rest.UpdateInteractionResponse(event.ApplicationID(), event.Token(), discord.MessageUpdate{
 				Content: json.Ptr(fmt.Sprintf("loaded track: [`%s`](<%s>)", track.Info.Title, *track.Info.URI)),
 			})
-			toPlay = &track
+			tracks = append(tracks, track)
 		},
 		func(playlist lavalink.Playlist) {
 			_, _ = b.Client.Rest.UpdateInteractionResponse(event.ApplicationID(), event.Token(), discord.MessageUpdate{
 				Content: json.Ptr(fmt.Sprintf("loaded playlist: `%s` with `%d` tracks", playlist.Info.Name, len(playlist.Tracks))),
 			})
-			toPlay = &playlist.Tracks[0]
+			tracks = append(tracks, playlist.Tracks...)
 		},
 		func(tracks []lavalink.Track) {
 			_, _ = b.Client.Rest.UpdateInteractionResponse(event.ApplicationID(), event.Token(), discord.MessageUpdate{
 				Content: json.Ptr(fmt.Sprintf("loaded search result: [`%s`](<%s>)", tracks[0].Info.Title, *tracks[0].Info.URI)),
 			})
-			toPlay = &tracks[0]
+			tracks = append(tracks, tracks[0])
 		},
 		func() {
 			_, _ = b.Client.Rest.UpdateInteractionResponse(event.ApplicationID(), event.Token(), discord.MessageUpdate{
@@ -366,7 +361,7 @@ func (b *Bot) loadTrack(event *events.ApplicationCommandInteractionCreate, data 
 		},
 	))
 
-	return toPlay
+	return tracks
 }
 
 func (b *Bot) play(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
@@ -374,9 +369,9 @@ func (b *Bot) play(event *events.ApplicationCommandInteractionCreate, data disco
 	if err != nil {
 		return err
 	}
-	toPlay := b.loadTrack(event, data)
-	if toPlay == nil {
-		return nil
+	tracks := b.loadTrack(event, data)
+	if len(tracks) == 0 {
+		return errors.New("no tracks found")
 	}
 
 	player := b.Lavalink.ExistingPlayer(*event.GuildID())
@@ -386,7 +381,7 @@ func (b *Bot) play(event *events.ApplicationCommandInteractionCreate, data disco
 		}
 	}
 
-	b.Lavalink.Player(*event.GuildID()).Update(context.TODO(), lavalink.WithTrack(*toPlay))
+	b.Lavalink.Player(*event.GuildID()).Update(context.TODO(), lavalink.WithTrack(tracks[0]))
 
 	return nil
 }
@@ -396,9 +391,9 @@ func (b *Bot) enqueue(event *events.ApplicationCommandInteractionCreate, data di
 	if err != nil {
 		return err
 	}
-	toPlay := b.loadTrack(event, data)
-	if toPlay == nil {
-		return nil
+	tracks := b.loadTrack(event, data)
+	if len(tracks) == 0 {
+		return errors.New("no tracks found")
 	}
 
 	player := b.Lavalink.ExistingPlayer(*event.GuildID())
@@ -409,11 +404,14 @@ func (b *Bot) enqueue(event *events.ApplicationCommandInteractionCreate, data di
 		}
 	}
 
+	queue := b.Queues.Get(*event.GuildID())
 	if player.Track() != nil {
-		queue := b.Queues.Get(*event.GuildID())
-		queue.Append(*toPlay)
+		queue.Append(tracks...)
 	} else {
-		b.Lavalink.Player(*event.GuildID()).Update(context.TODO(), lavalink.WithTrack(*toPlay))
+		b.Lavalink.Player(*event.GuildID()).Update(context.TODO(), lavalink.WithTrack(tracks[0]))
+		if len(tracks[1:]) != 0 {
+			queue.Append(tracks[1:]...)
+		}
 	}
 
 	return nil
