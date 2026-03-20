@@ -13,7 +13,7 @@ const (
 	serverAddress = "localhost:8080"
 )
 
-func server(robot Bot, guildID snowflake.ID) {
+func server(robot *Bot, guildID snowflake.ID) {
 	bogus := Bogus{
 		Bot:            robot,
 		currentGuildID: guildID,

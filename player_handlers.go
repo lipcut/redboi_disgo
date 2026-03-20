@@ -10,6 +10,7 @@ import (
 
 func (b *Bot) onPlayerPause(player disgolink.Player, event lavalink.PlayerPauseEvent) {
 	slog.Info("player paused", slog.Any("event", event))
+	b.publish()
 }
 
 func (b *Bot) onPlayerResume(player disgolink.Player, event lavalink.PlayerResumeEvent) {

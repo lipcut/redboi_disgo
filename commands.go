@@ -108,8 +108,8 @@ var commands = []discord.ApplicationCommandCreate{
 		},
 	},
 	discord.SlashCommandCreate{
-		Name:        "pause",
-		Description: "Pauses the current song",
+		Name:        "toggle-play",
+		Description: "Play/pause the current song",
 	},
 	discord.SlashCommandCreate{
 		Name:        "now-playing",
@@ -177,6 +177,11 @@ var commands = []discord.ApplicationCommandCreate{
 	discord.SlashCommandCreate{
 		Name:        "summon",
 		Description: "Summon the bot to the current channel",
+	},
+
+	discord.SlashCommandCreate{
+		Name:        "clear-queue",
+		Description: "Clears the current queue",
 	},
 }
 

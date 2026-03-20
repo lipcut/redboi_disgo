@@ -52,18 +52,6 @@
                 });
             }
 
-            async function publishToPeers() {
-                const res = await fetch("/api/publish", {
-                    method: "POST",
-                    headers: { "Content-Type": "text/plain; charset=utf-8" },
-                    body: "update!",
-                    credentials: "same-origin",
-                });
-                if (!res.ok) {
-                    console.error("publish failed", res.status);
-                }
-            }
-
             dial();
         </script>
     </head>
@@ -788,7 +776,7 @@
                 <div class="card-body space-y-4">
                     <div
                         class="join w-full"
-                        data-on:keydown="evt.keyCode == 13 && (() => { @post('/api/enqueue'); $identifier = ''; publishToPeers() })() "
+                        data-on:keydown="evt.keyCode == 13 && (() => { @post('/api/enqueue'); $identifier = '' })() "
                     >
                         <input
                             type="text"
@@ -799,7 +787,7 @@
                         <button
                             class="btn btn-primary join-item"
                             data-attr:disabled="$identifier == ''"
-                            data-on:click="@post('/api/enqueue'); $identifier = ''; publishToPeers()"
+                            data-on:click="@post('/api/enqueue'); $identifier = ''"
                         >
                             Enqueue
                         </button>
@@ -808,24 +796,24 @@
                     <div class="flex gap-2 join place-content-center">
                         <button
                             class="btn btn-outline join-item"
-                            data-on:click="@get('/api/toggle-play'); publishToPeers()"
+                            data-on:click="@get('/api/toggle-play')"
                             id="play-pause-btn"
                         ></button>
                         <button
                             class="btn btn-outline join-item"
-                            data-on:click="@get('/api/skip'); publishToPeers()"
+                            data-on:click="@get('/api/skip')"
                         >
                             Next
                         </button>
                         <button
                             class="btn btn-warning btn-outline join-item"
-                            data-on:click="@get('/api/stop'); publishToPeers()"
+                            data-on:click="@get('/api/stop')"
                         >
                             Stop
                         </button>
                         <button
                             class="btn btn-error btn-outline join-item"
-                            data-on:click="@post('/api/clear'); publishToPeers()"
+                            data-on:click="@post('/api/clear')"
                         >
                             Clear
                         </button>

@@ -142,14 +142,14 @@ func (b *Bot) onApplicationCommand(event *events.ApplicationCommandInteractionCr
 		slog.Error("error handling command", slog.Any("err", err))
 	}
 
-	if b.PublishClient != nil {
-		res, err := b.PublishClient.Post("http://localhost:8080/api/publish", "text/plain", strings.NewReader("update!"))
-		if err != nil {
-			slog.Error("error posting update", slog.Any("err", err))
-		} else {
-			slog.Info("update posted", slog.Any("res", res))
-		}
-		res.Body.Close()
+	if interactionData.CommandName() == "enqueue" ||
+		interactionData.CommandName() == "skip" ||
+		interactionData.CommandName() == "play" ||
+		interactionData.CommandName() == "toggle-play" ||
+		interactionData.CommandName() == "stop" ||
+		interactionData.CommandName() == "shuffle" ||
+		interactionData.CommandName() == "clear-queue" {
+		b.publish()
 	}
 }
 
@@ -178,7 +178,11 @@ func (b *Bot) onVoiceServerUpdate(event *events.VoiceServerUpdate) {
 	b.Lavalink.OnVoiceServerUpdate(context.TODO(), event.GuildID, event.Token, *event.Endpoint)
 }
 
-func discordBot(token string) (Bot, error) {
+func (b *Bot) publish() {
+	b.PublishClient.Post("http://localhost:8080/api/publish", "text/plain", strings.NewReader("update!"))
+}
+
+func discordBot(token string) (*Bot, error) {
 	robot := Bot{
 		Queues:        make(map[snowflake.ID]*Queue),
 		PublishClient: &http.Client{},
@@ -199,7 +203,7 @@ func discordBot(token string) (Bot, error) {
 		),
 	)
 	if err != nil {
-		return Bot{}, fmt.Errorf("error while building disgo client: %w", err)
+		return nil, fmt.Errorf("error while building disgo client: %w", err)
 	}
 
 	robot.Client = *client
@@ -220,7 +224,7 @@ func discordBot(token string) (Bot, error) {
 	robot.CommandHandlers = map[string]func(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error{
 		"play":        robot.play,
 		"enqueue":     robot.enqueue,
-		"pause":       robot.pause,
+		"toggle-play": robot.togglePlay,
 		"now-playing": robot.nowPlaying,
 		"stop":        robot.stop,
 		"disconnect":  robot.disconnect,
@@ -230,11 +234,10 @@ func discordBot(token string) (Bot, error) {
 		"queue-type":  robot.queueType,
 		"shuffle":     robot.shuffle,
 		"seek":        robot.seek,
-		"volume":      robot.volume,
 		"skip":        robot.skip,
 		"bass-boost":  robot.bassBoost,
 		"summon":      robot.summon,
 	}
 
-	return robot, nil
+	return &robot, nil
 }

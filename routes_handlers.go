@@ -18,7 +18,7 @@ import (
 
 // Proxy the bot to hijack the discord
 type Bogus struct {
-	Bot
+	*Bot
 	currentGuildID snowflake.ID
 }
 
@@ -106,7 +106,7 @@ func (b *Bogus) queue(w http.ResponseWriter, r *http.Request) {
 				<div>%v</div>
 				<div class="text-xs uppercase font-semibold opacity-60">%v</div>
 			</div>
-			<button class="btn btn-ghost btn-error" data-on:click="@delete('/api/remove-track/%d'); publishToPeers()">
+			<button class="btn btn-ghost btn-error" data-on:click="@delete('/api/remove-track/%d')">
 				Remove
 			</button>
 			</li>
@@ -140,7 +140,7 @@ func (b *Bogus) checkPaused(w http.ResponseWriter, r *http.Request) {
 	err := sse.PatchElementf(
 		`<button
 				class="btn btn-outline join-item"
-				data-on:click="@get('/api/toggle-play'); publishToPeers()"
+				data-on:click="@get('/api/toggle-play')"
 				id="play-pause-btn"
 			>%v</button>`, message)
 	if err != nil {
@@ -186,6 +186,7 @@ func (b *Bogus) enqueue(w http.ResponseWriter, r *http.Request) {
 
 	b.nowPlaying(w, r)
 	b.queue(w, r)
+	b.publish()
 }
 
 func (b *Bogus) togglePlay(w http.ResponseWriter, r *http.Request) {
@@ -202,6 +203,7 @@ func (b *Bogus) togglePlay(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b.checkPaused(w, r)
+	b.publish()
 }
 
 func (b *Bogus) skip(w http.ResponseWriter, r *http.Request) {
@@ -225,6 +227,7 @@ func (b *Bogus) skip(w http.ResponseWriter, r *http.Request) {
 
 	b.nowPlaying(w, r)
 	b.queue(w, r)
+	b.publish()
 }
 
 func (b *Bogus) stop(w http.ResponseWriter, r *http.Request) {
@@ -242,6 +245,7 @@ func (b *Bogus) stop(w http.ResponseWriter, r *http.Request) {
 
 	b.nowPlaying(w, r)
 	b.queue(w, r)
+	b.publish()
 }
 
 func (b *Bogus) removeTrack(w http.ResponseWriter, r *http.Request) {
@@ -258,9 +262,11 @@ func (b *Bogus) removeTrack(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b.queue(w, r)
+	b.publish()
 }
 
 func (b *Bogus) clear(w http.ResponseWriter, r *http.Request) {
 	b.Queues.Get(b.currentGuildID).Clear()
 	b.queue(w, r)
+	b.publish()
 }

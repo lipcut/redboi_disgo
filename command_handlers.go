@@ -215,7 +215,7 @@ func (b *Bot) players(event *events.ApplicationCommandInteractionCreate, data di
 	})
 }
 
-func (b *Bot) pause(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
+func (b *Bot) togglePlay(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
 	player := b.Lavalink.ExistingPlayer(*event.GuildID())
 	if player == nil {
 		return event.CreateMessage(discord.MessageCreate{
@@ -329,25 +329,25 @@ func (b *Bot) loadTrack(event *events.ApplicationCommandInteractionCreate, data 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	tracks := []lavalink.Track{}
+	result_tracks := []lavalink.Track{}
 	b.Lavalink.BestNode().LoadTracksHandler(ctx, identifier, disgolink.NewResultHandler(
 		func(track lavalink.Track) {
 			_, _ = b.Client.Rest.UpdateInteractionResponse(event.ApplicationID(), event.Token(), discord.MessageUpdate{
 				Content: json.Ptr(fmt.Sprintf("loaded track: [`%s`](<%s>)", track.Info.Title, *track.Info.URI)),
 			})
-			tracks = append(tracks, track)
+			result_tracks = append(result_tracks, track)
 		},
 		func(playlist lavalink.Playlist) {
 			_, _ = b.Client.Rest.UpdateInteractionResponse(event.ApplicationID(), event.Token(), discord.MessageUpdate{
 				Content: json.Ptr(fmt.Sprintf("loaded playlist: `%s` with `%d` tracks", playlist.Info.Name, len(playlist.Tracks))),
 			})
-			tracks = append(tracks, playlist.Tracks...)
+			result_tracks = append(result_tracks, playlist.Tracks...)
 		},
 		func(tracks []lavalink.Track) {
 			_, _ = b.Client.Rest.UpdateInteractionResponse(event.ApplicationID(), event.Token(), discord.MessageUpdate{
 				Content: json.Ptr(fmt.Sprintf("loaded search result: [`%s`](<%s>)", tracks[0].Info.Title, *tracks[0].Info.URI)),
 			})
-			tracks = append(tracks, tracks[0])
+			result_tracks = append(result_tracks, tracks[0])
 		},
 		func() {
 			_, _ = b.Client.Rest.UpdateInteractionResponse(event.ApplicationID(), event.Token(), discord.MessageUpdate{
@@ -361,7 +361,7 @@ func (b *Bot) loadTrack(event *events.ApplicationCommandInteractionCreate, data 
 		},
 	))
 
-	return tracks
+	return result_tracks
 }
 
 func (b *Bot) play(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
