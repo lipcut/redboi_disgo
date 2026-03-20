@@ -156,7 +156,16 @@ func (b *Bot) onApplicationCommand(event *events.ApplicationCommandInteractionCr
 // onVoiceStateUpdate: forward request to Lavalink
 func (b *Bot) onVoiceStateUpdate(event *events.GuildVoiceStateUpdate) {
 	if event.VoiceState.UserID != b.Client.ApplicationID {
-		return
+		for voiceState := range event.Client().Caches.VoiceStates(event.VoiceState.GuildID) {
+			if voiceState.SessionID != event.VoiceState.SessionID {
+				continue
+			}
+			if voiceState.UserID != b.Client.ApplicationID {
+				slog.Info("found user in voice", slog.String("guild", voiceState.UserID.String()))
+				return
+			}
+		}
+		b.Client.UpdateVoiceState(context.TODO(), event.VoiceState.GuildID, nil, false, false)
 	}
 	b.Lavalink.OnVoiceStateUpdate(context.TODO(), event.VoiceState.GuildID, event.VoiceState.ChannelID, event.VoiceState.SessionID)
 }
