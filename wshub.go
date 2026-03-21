@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"sync"
@@ -12,7 +13,6 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/coder/websocket"
-	"github.com/go-acme/lego/v4/log"
 )
 
 // WsHub enables broadcasting to a set of subscribers. (for real-time communication between website instances and discord command)
@@ -63,7 +63,7 @@ func (cs *WsHub) subscribeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		log.Printf("%v", err)
+		slog.Error("websocket error", slog.Any("err", err))
 		return
 	}
 }
@@ -113,7 +113,16 @@ func (cs *WsHub) subscribe(w http.ResponseWriter, r *http.Request) error {
 	cs.addSubscriber(s)
 	defer cs.deleteSubscriber(s)
 
-	c2, err := websocket.Accept(w, r, nil)
+	c2, err := websocket.Accept(w, r, &websocket.AcceptOptions{
+		OriginPatterns: []string{
+			"http://localhost:*",
+			"http://127.0.0.1:*",
+			"https://localhost:*",
+			"https://127.0.0.1:*",
+			"https://*.zrok.io",
+			"https://*-share.zrok.io",
+		},
+	})
 	if err != nil {
 		return err
 	}

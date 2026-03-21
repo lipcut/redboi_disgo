@@ -23,6 +23,9 @@
             type="text/css"
         />
         <script>
+            let wsRetryCount = 0;
+            const wsMaxDelay = 30000;
+
             function dial() {
                 const conn = new WebSocket(
                     `wss://${location.host}/api/subscribe`,
@@ -30,11 +33,15 @@
 
                 conn.addEventListener("close", (event) => {
                     if (event.code !== 1001) {
-                        setTimeout(dial, 1000);
+                        const delay = Math.min(1000 * Math.pow(2, wsRetryCount), wsMaxDelay);
+                        const jitter = Math.random() * 500;
+                        wsRetryCount++;
+                        setTimeout(dial, delay + jitter);
                     }
                 });
                 conn.addEventListener("open", (event) => {
                     console.info("websocket connected");
+                    wsRetryCount = 0;
                 });
 
                 // This is where we handle messages received.
