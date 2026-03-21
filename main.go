@@ -13,23 +13,19 @@ import (
 
 	"github.com/disgoorg/disgolink/v3/disgolink"
 	"github.com/disgoorg/snowflake/v2"
-	"github.com/dotenv-org/godotenvvault"
+)
+
+var (
+	Token         = os.Getenv("TOKEN")
+	guildID       = snowflake.GetEnv("GUILD_ID")
+	NodeName      = os.Getenv("NODE_NAME")
+	NodeAddress   = os.Getenv("NODE_ADDRESS")
+	NodePassword  = os.Getenv("NODE_PASSWORD")
+	NodeSecure, _ = strconv.ParseBool(os.Getenv("NODE_SECURE"))
 )
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	if err := godotenvvault.Load(); err != nil {
-		log.Fatal(err)
-	}
-
-	var (
-		Token         = os.Getenv("TOKEN")
-		guildID       = snowflake.GetEnv("GUILD_ID")
-		NodeName      = os.Getenv("NODE_NAME")
-		NodeAddress   = os.Getenv("NODE_ADDRESS")
-		NodePassword  = os.Getenv("NODE_PASSWORD")
-		NodeSecure, _ = strconv.ParseBool(os.Getenv("NODE_SECURE"))
-	)
 
 	robot, err := discordBot(Token)
 	if err != nil {
