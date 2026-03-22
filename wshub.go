@@ -120,6 +120,7 @@ func (cs *WsHub) subscribe(w http.ResponseWriter, r *http.Request) error {
 			"https://localhost:*",
 			"https://127.0.0.1:*",
 			"https://*.zrok.io",
+			"https://lh3.googleusercontent.com",
 			"https://*-share.zrok.io",
 		},
 	})
