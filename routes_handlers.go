@@ -26,7 +26,20 @@ type Store struct {
 	Identifier string `json:"identifier"`
 }
 
-func (b *Bogus) loadTrack(identifier string) ([]lavalink.Track, error) {
+type TrackResultKind = int
+
+const (
+	TrackResultSingle TrackResultKind = iota
+	TrackResultMultiple
+	TrackResultPlaylist
+)
+
+type ResultTrack struct {
+	Kind   TrackResultKind
+	Tracks []lavalink.Track
+}
+
+func (b *Bogus) loadTracks(identifier string) (ResultTrack, error) {
 	if !urlPattern.MatchString(identifier) && !searchPattern.MatchString(identifier) {
 		identifier = lavalink.SearchTypeYouTubeMusic.Apply(identifier)
 	}
@@ -34,27 +47,32 @@ func (b *Bogus) loadTrack(identifier string) ([]lavalink.Track, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var result_error error
-	result_tracks := []lavalink.Track{}
+	var resultError error
+	result := ResultTrack{
+		Tracks: []lavalink.Track{},
+	}
 	b.Lavalink.BestNode().LoadTracksHandler(ctx, identifier, disgolink.NewResultHandler(
 		func(track lavalink.Track) {
-			result_tracks = append(result_tracks, track)
+			result.Kind = TrackResultSingle
+			result.Tracks = append(result.Tracks, track)
 		},
 		func(playlist lavalink.Playlist) {
-			result_tracks = slices.Concat(result_tracks, playlist.Tracks)
+			result.Kind = TrackResultPlaylist
+			result.Tracks = slices.Concat(result.Tracks, playlist.Tracks)
 		},
 		func(tracks []lavalink.Track) {
-			result_tracks = append(result_tracks, tracks[0])
+			result.Kind = TrackResultMultiple
+			result.Tracks = slices.Concat(result.Tracks, tracks)
 		},
 		func() {
-			result_error = errors.New(fmt.Sprintf("Nothing found for: `%s`", identifier))
+			resultError = errors.New(fmt.Sprintf("Nothing found for: `%s`", identifier))
 		},
 		func(err error) {
-			result_error = err
+			resultError = err
 		},
 	))
 
-	return result_tracks, result_error
+	return result, resultError
 }
 
 func (b *Bogus) nowPlaying(w http.ResponseWriter, r *http.Request) {
@@ -168,19 +186,31 @@ func (b *Bogus) enqueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tracks, err := b.loadTrack(store.Identifier)
+	tracks, err := b.loadTracks(store.Identifier)
 	if err != nil {
 		slog.Error("failed to enqueue", slog.Any("err", err))
 		return
 	}
 
 	queue := b.Queues.Get(b.currentGuildID)
-	if player.Track() != nil {
-		queue.Append(tracks...)
-	} else {
-		player.Update(context.TODO(), lavalink.WithTrack(tracks[0]))
-		if len(tracks[1:]) != 0 {
-			queue.Append(tracks[1:]...)
+
+	switch tracks.Kind {
+	case TrackResultPlaylist:
+		playlist := tracks.Tracks
+		if player.Track() != nil {
+			queue.Append(playlist...)
+		} else {
+			player.Update(context.TODO(), lavalink.WithTrack(playlist[0]))
+			if len(playlist[1:]) != 0 {
+				queue.Append(playlist[1:]...)
+			}
+		}
+	case TrackResultSingle, TrackResultMultiple:
+		track := tracks.Tracks[0]
+		if player.Track() != nil {
+			queue.Append(track)
+		} else {
+			player.Update(context.TODO(), lavalink.WithTrack(track))
 		}
 	}
 
@@ -269,4 +299,62 @@ func (b *Bogus) clear(w http.ResponseWriter, r *http.Request) {
 	b.Queues.Get(b.currentGuildID).Clear()
 	b.queue(w, r)
 	b.publish()
+}
+
+func (b *Bogus) search(w http.ResponseWriter, r *http.Request) {
+	player := b.Lavalink.ExistingPlayer(b.currentGuildID)
+	if player == nil {
+		slog.Error("No player found")
+		return
+	}
+
+	store := &Store{}
+	if err := datastar.ReadSignals(r, store); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	identifier := store.Identifier
+	tracks, err := b.loadTracks(identifier)
+	if err != nil {
+		slog.Error("failed to enqueue", slog.Any("err", err))
+		return
+	}
+
+	// queue := b.Queues.Get(b.currentGuildID)
+	if !urlPattern.MatchString(identifier) && !searchPattern.MatchString(identifier) {
+		switch tracks.Kind {
+		case TrackResultPlaylist:
+		case TrackResultSingle, TrackResultMultiple:
+			sse := datastar.NewSSE(w, r)
+			var resultHTML string
+			for idx, track := range tracks.Tracks {
+				if idx >= 8 {
+					break
+				}
+				info := track.Info
+				resultHTML += fmt.Sprintf(`<li
+					class="list-row py-1"
+					data-search-index="%d"
+					data-identifier="%v"
+					data-class:bg-neutral="$searchIndex === %d"
+					data-on:click="$searchIndex = %d; $identifier = el.dataset.identifier; @post('/api/enqueue'); $identifier = ''; $searchIndex = -1"
+				>
+					<div><img class="mask mask-squircle size-6" src="%v"/></div>
+					<div class="text-sm">
+						<div>%v</div>
+						<div class="text-xs uppercase font-semibold opacity-60 truncate">%v</div>
+					</div>
+				</li>`,
+					idx, *track.Info.URI, idx, idx, *track.Info.ArtworkURL, info.Author, info.Title)
+			}
+			sse.PatchElements(resultHTML, datastar.WithSelectorID("search-results"), datastar.WithModeInner())
+			sse.MarshalAndPatchSignals(map[string]any{
+				"searchResultCount":  min(len(tracks.Tracks), 8),
+				"searchIndex":        0,
+				"selectedIdentifier": *tracks.Tracks[0].Info.URI,
+			})
+		}
+
+	}
 }

@@ -33,7 +33,10 @@
 
                 conn.addEventListener("close", (event) => {
                     if (event.code !== 1001) {
-                        const delay = Math.min(1000 * Math.pow(2, wsRetryCount), wsMaxDelay);
+                        const delay = Math.min(
+                            1000 * Math.pow(2, wsRetryCount),
+                            wsMaxDelay,
+                        );
                         const jitter = Math.random() * 500;
                         wsRetryCount++;
                         setTimeout(dial, delay + jitter);
@@ -67,7 +70,7 @@
     >
         <main
             class="container mx-auto max-w-3xl px-4 py-8 space-y-6"
-            data-signals="{identifier: ''}"
+            data-signals="{identifier: '', searchIndex: -1, searchResultCount: 0, selectedIdentifier: ''}"
             data-on-intersect="@get('/api/sync')"
         >
             <!-- Magic buttons (not visible) -->
@@ -781,25 +784,55 @@
             <!-- Controls -->
             <section class="card bg-base-100 shadow-sm">
                 <div class="card-body space-y-4">
-                    <div
-                        class="join w-full"
-                        data-on:keydown="evt.keyCode == 13 && (() => { @post('/api/enqueue'); $identifier = '' })() "
-                    >
-                        <input
-                            type="text"
-                            placeholder="YouTube URL or Search Query"
-                            class="input input-bordered join-item w-full"
-                            data-bind="identifier"
-                        />
-                        <button
-                            class="btn btn-primary join-item"
-                            data-attr:disabled="$identifier == ''"
-                            data-on:click="@post('/api/enqueue'); $identifier = ''"
+                    <div class="dropdown">
+                        <div
+                            tabindex="0"
+                            role="button"
+                            class="join w-full"
+                            data-on:keydown="
+                            (() => {
+                                if (evt.keyCode === 40 && $searchResultCount > 0) {
+                                    $searchIndex = ($searchIndex + 1) % $searchResultCount;
+                                    $selectedIdentifier = document.querySelector('[data-search-index=&quot;' + $searchIndex + '&quot;]')?.dataset?.identifier || '';
+                                } else if (evt.keyCode === 38 && $searchResultCount > 0) {
+                                    $searchIndex = ($searchIndex - 1 + $searchResultCount) % $searchResultCount;
+                                    $selectedIdentifier = document.querySelector('[data-search-index=&quot;' + $searchIndex + '&quot;]')?.dataset?.identifier || '';
+                                } else if (evt.keyCode === 13 && $searchIndex >= 0 && $searchResultCount > 0) {
+                                    $identifier = $selectedIdentifier;
+                                    @post('/api/enqueue');
+                                    $identifier = '';
+                                    $searchIndex = -1;
+                                    $selectedIdentifier = '';
+                                } else if (evt.keyCode === 27) {
+                                    $identifier = '';
+                                    $searchIndex = -1;
+                                    $selectedIdentifier = '';
+                                }
+                            })()"
                         >
-                            Enqueue
-                        </button>
-                    </div>
+                            <input
+                                type="text"
+                                placeholder="YouTube URL or Search Query"
+                                class="input input-bordered join-item w-full"
+                                data-bind="identifier"
+                                data-on:input__debounce.200ms="@get('/api/search'); $searchIndex = -1; $searchResultCount = 0; $selectedIdentifier = ''"
+                            />
+                            <button
+                                class="btn btn-primary join-item"
+                                data-attr:disabled="$identifier == ''"
+                                data-on:click="@post('/api/enqueue'); $identifier = ''"
+                            >
+                                Enqueue
+                            </button>
+                        </div>
 
+                        <ul
+                            tabindex="-1"
+                            id="search-results"
+                            data-attr:hidden="$identifier == ''"
+                            class="dropdown-content list menu bg-base-200 rounded-box w-full"
+                        ></ul>
+                    </div>
                     <div class="flex gap-2 join place-content-center">
                         <button
                             class="btn btn-outline join-item"

@@ -39,6 +39,7 @@ func server(robot *Bot, guildID snowflake.ID) {
 	mux.HandleFunc("/api/clear", bogus.clear)
 	mux.HandleFunc("/api/remove-track/{id}", bogus.removeTrack)
 	mux.HandleFunc("/api/sync", bogus.sync)
+	mux.HandleFunc("/api/search", bogus.search)
 	WsHubSetup(mux)
 
 	slog.Info(fmt.Sprintf(
