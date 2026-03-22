@@ -25,8 +25,6 @@ github.com/disgoorg/snowflake/v2 v2.0.3 h1:3B+PpFjr7j4ad7oeJu4RlQ+nYOTadsKapJIzg
 github.com/disgoorg/snowflake/v2 v2.0.3/go.mod h1:W6r7NUA7DwfZLwr00km6G4UnZ0zcoLBRufhkFWgAc4c=
 github.com/dotenv-org/godotenvvault v0.6.0 h1:e6rUPELZaPmf6SgxxdB3nACG9VQAE8+omrSSZm0QUgk=
 github.com/dotenv-org/godotenvvault v0.6.0/go.mod h1:q/635WfmO04uUBVwrDWchRPOvPWaplWC6Udm+illcS4=
-github.com/go-acme/lego/v4 v4.33.0 h1:2KrRKieG+VczT4zvVXKAY7Tp/S3XLvh/QImofBALRAM=
-github.com/go-acme/lego/v4 v4.33.0/go.mod h1:lI2fZNdgeM/ymf9xQ9YKbgZm6MeDuf91UrohMQE4DhI=
 github.com/google/brotli/go/cbrotli v0.0.0-20230829110029-ed738e842d2f h1:jopqB+UTSdJGEJT8tEqYyE29zN91fi2827oLET8tl7k=
 github.com/google/brotli/go/cbrotli v0.0.0-20230829110029-ed738e842d2f/go.mod h1:nOPhAkwVliJdNTkj3gXpljmWhjc4wCaVqbMJcPKWP4s=
 github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg=
