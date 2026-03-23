@@ -173,6 +173,14 @@ func (b *Bot) publish() {
 	b.PublishClient.Post("http://localhost:8080/api/publish", "text/plain", strings.NewReader("update!"))
 }
 
+func (b *Bot) requirePlayer(guildID snowflake.ID) (disgolink.Player, bool) {
+	player := b.Lavalink.ExistingPlayer(guildID)
+	if player == nil {
+		return nil, false
+	}
+	return player, true
+}
+
 func discordBot(token string) (*Bot, error) {
 	robot := Bot{
 		Queues:        make(map[snowflake.ID]*Queue),

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"regexp"
 	"time"
 
 	"github.com/disgoorg/disgo/discord"
@@ -33,9 +32,6 @@ var (
 		13: -0.1,
 		14: -0.1,
 	}
-
-	urlPattern    = regexp.MustCompile("^https?://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]?")
-	searchPattern = regexp.MustCompile(`^(.{2})search:(.+)`)
 )
 
 func (b *Bot) shuffle(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
@@ -53,11 +49,9 @@ func (b *Bot) shuffle(event *events.ApplicationCommandInteractionCreate, data di
 }
 
 func (b *Bot) volume(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
-	player := b.Lavalink.ExistingPlayer(*event.GuildID())
-	if player == nil {
-		return event.CreateMessage(discord.MessageCreate{
-			Content: "No player found",
-		})
+	player, ok := b.requirePlayer(*event.GuildID())
+	if !ok {
+		return event.CreateMessage(discord.MessageCreate{Content: "No player found"})
 	}
 
 	volume := data.Int("volume")
@@ -73,11 +67,9 @@ func (b *Bot) volume(event *events.ApplicationCommandInteractionCreate, data dis
 }
 
 func (b *Bot) seek(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
-	player := b.Lavalink.ExistingPlayer(*event.GuildID())
-	if player == nil {
-		return event.CreateMessage(discord.MessageCreate{
-			Content: "No player found",
-		})
+	player, ok := b.requirePlayer(*event.GuildID())
+	if !ok {
+		return event.CreateMessage(discord.MessageCreate{Content: "No player found"})
 	}
 
 	position := data.String("position")
@@ -100,11 +92,9 @@ func (b *Bot) seek(event *events.ApplicationCommandInteractionCreate, data disco
 }
 
 func (b *Bot) bassBoost(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
-	player := b.Lavalink.ExistingPlayer(*event.GuildID())
-	if player == nil {
-		return event.CreateMessage(discord.MessageCreate{
-			Content: "No player found",
-		})
+	player, ok := b.requirePlayer(*event.GuildID())
+	if !ok {
+		return event.CreateMessage(discord.MessageCreate{Content: "No player found"})
 	}
 
 	enabled := data.Bool("enabled")
@@ -127,11 +117,9 @@ func (b *Bot) bassBoost(event *events.ApplicationCommandInteractionCreate, data 
 }
 
 func (b *Bot) skip(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
-	player := b.Lavalink.ExistingPlayer(*event.GuildID())
-	if player == nil {
-		return event.CreateMessage(discord.MessageCreate{
-			Content: "No player found",
-		})
+	player, ok := b.requirePlayer(*event.GuildID())
+	if !ok {
+		return event.CreateMessage(discord.MessageCreate{Content: "No player found"})
 	}
 
 	queue := b.Queues.Get(*event.GuildID())
@@ -216,11 +204,9 @@ func (b *Bot) players(event *events.ApplicationCommandInteractionCreate, data di
 }
 
 func (b *Bot) togglePlay(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
-	player := b.Lavalink.ExistingPlayer(*event.GuildID())
-	if player == nil {
-		return event.CreateMessage(discord.MessageCreate{
-			Content: "No player found",
-		})
+	player, ok := b.requirePlayer(*event.GuildID())
+	if !ok {
+		return event.CreateMessage(discord.MessageCreate{Content: "No player found"})
 	}
 
 	if err := player.Update(context.TODO(), lavalink.WithPaused(!player.Paused())); err != nil {
@@ -239,11 +225,9 @@ func (b *Bot) togglePlay(event *events.ApplicationCommandInteractionCreate, data
 }
 
 func (b *Bot) stop(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
-	player := b.Lavalink.ExistingPlayer(*event.GuildID())
-	if player == nil {
-		return event.CreateMessage(discord.MessageCreate{
-			Content: "No player found",
-		})
+	player, ok := b.requirePlayer(*event.GuildID())
+	if !ok {
+		return event.CreateMessage(discord.MessageCreate{Content: "No player found"})
 	}
 
 	if err := player.Update(context.TODO(), lavalink.WithNullTrack()); err != nil {
@@ -258,11 +242,9 @@ func (b *Bot) stop(event *events.ApplicationCommandInteractionCreate, data disco
 }
 
 func (b *Bot) disconnect(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
-	player := b.Lavalink.ExistingPlayer(*event.GuildID())
-	if player == nil {
-		return event.CreateMessage(discord.MessageCreate{
-			Content: "No player found",
-		})
+	_, ok := b.requirePlayer(*event.GuildID())
+	if !ok {
+		return event.CreateMessage(discord.MessageCreate{Content: "No player found"})
 	}
 
 	if err := b.Client.UpdateVoiceState(context.TODO(), *event.GuildID(), nil, false, false); err != nil {
@@ -277,11 +259,9 @@ func (b *Bot) disconnect(event *events.ApplicationCommandInteractionCreate, data
 }
 
 func (b *Bot) nowPlaying(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
-	player := b.Lavalink.ExistingPlayer(*event.GuildID())
-	if player == nil {
-		return event.CreateMessage(discord.MessageCreate{
-			Content: "No player found",
-		})
+	player, ok := b.requirePlayer(*event.GuildID())
+	if !ok {
+		return event.CreateMessage(discord.MessageCreate{Content: "No player found"})
 	}
 
 	track := player.Track()

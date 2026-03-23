@@ -76,9 +76,8 @@ func (b *Bogus) loadTracks(identifier string) (ResultTrack, error) {
 }
 
 func (b *Bogus) nowPlaying(w http.ResponseWriter, r *http.Request) {
-	player := b.Lavalink.ExistingPlayer(b.currentGuildID)
-	if player == nil {
-		slog.Error("No player found")
+	player, ok := b.requirePlayer(b.currentGuildID)
+	if !ok {
 		return
 	}
 	track := player.Track()
@@ -145,9 +144,8 @@ func (b *Bogus) queue(w http.ResponseWriter, r *http.Request) {
 }
 
 func (b *Bogus) checkPaused(w http.ResponseWriter, r *http.Request) {
-	player := b.Lavalink.ExistingPlayer(b.currentGuildID)
-	if player == nil {
-		slog.Error("No player found")
+	player, ok := b.requirePlayer(b.currentGuildID)
+	if !ok {
 		return
 	}
 	message := "Pause"
@@ -174,9 +172,8 @@ func (b *Bogus) sync(w http.ResponseWriter, r *http.Request) {
 }
 
 func (b *Bogus) enqueue(w http.ResponseWriter, r *http.Request) {
-	player := b.Lavalink.ExistingPlayer(b.currentGuildID)
-	if player == nil {
-		slog.Error("No player found")
+	player, ok := b.requirePlayer(b.currentGuildID)
+	if !ok {
 		return
 	}
 
@@ -220,9 +217,8 @@ func (b *Bogus) enqueue(w http.ResponseWriter, r *http.Request) {
 }
 
 func (b *Bogus) togglePlay(w http.ResponseWriter, r *http.Request) {
-	player := b.Lavalink.ExistingPlayer(b.currentGuildID)
-	if player == nil {
-		slog.Error("No player found")
+	player, ok := b.requirePlayer(b.currentGuildID)
+	if !ok {
 		return
 	}
 
@@ -237,9 +233,8 @@ func (b *Bogus) togglePlay(w http.ResponseWriter, r *http.Request) {
 }
 
 func (b *Bogus) skip(w http.ResponseWriter, r *http.Request) {
-	player := b.Lavalink.ExistingPlayer(b.currentGuildID)
-	if player == nil {
-		slog.Error("No player found")
+	player, ok := b.requirePlayer(b.currentGuildID)
+	if !ok {
 		return
 	}
 
@@ -261,9 +256,8 @@ func (b *Bogus) skip(w http.ResponseWriter, r *http.Request) {
 }
 
 func (b *Bogus) stop(w http.ResponseWriter, r *http.Request) {
-	player := b.Lavalink.ExistingPlayer(b.currentGuildID)
-	if player == nil {
-		slog.Error("No player found")
+	player, ok := b.requirePlayer(b.currentGuildID)
+	if !ok {
 		return
 	}
 
@@ -302,9 +296,8 @@ func (b *Bogus) clear(w http.ResponseWriter, r *http.Request) {
 }
 
 func (b *Bogus) search(w http.ResponseWriter, r *http.Request) {
-	player := b.Lavalink.ExistingPlayer(b.currentGuildID)
-	if player == nil {
-		slog.Error("No player found")
+	_, ok := b.requirePlayer(b.currentGuildID)
+	if !ok {
 		return
 	}
 
