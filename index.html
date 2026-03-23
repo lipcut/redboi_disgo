@@ -784,54 +784,56 @@
             <!-- Controls -->
             <section class="card bg-base-100 shadow-sm">
                 <div class="card-body space-y-4">
-                    <div class="dropdown">
-                        <div
-                            tabindex="0"
-                            role="button"
-                            class="join w-full"
-                            data-on:keydown="
-                            (() => {
-                                if (evt.keyCode === 40 && $searchResultCount > 0) {
-                                    $searchIndex = ($searchIndex + 1) % $searchResultCount;
-                                    $selectedIdentifier = document.querySelector('[data-search-index=&quot;' + $searchIndex + '&quot;]')?.dataset?.identifier || '';
-                                } else if (evt.keyCode === 38 && $searchResultCount > 0) {
-                                    $searchIndex = ($searchIndex - 1 + $searchResultCount) % $searchResultCount;
-                                    $selectedIdentifier = document.querySelector('[data-search-index=&quot;' + $searchIndex + '&quot;]')?.dataset?.identifier || '';
-                                } else if (evt.keyCode === 13 && $searchIndex >= 0 && $searchResultCount > 0) {
-                                    $identifier = $selectedIdentifier;
-                                    @post('/api/enqueue');
-                                    $identifier = '';
-                                    $searchIndex = -1;
-                                    $selectedIdentifier = '';
-                                } else if (evt.keyCode === 27) {
-                                    $identifier = '';
-                                    $searchIndex = -1;
-                                    $selectedIdentifier = '';
-                                }
-                            })()"
-                        >
-                            <input
-                                type="text"
-                                placeholder="YouTube URL or Search Query"
-                                class="input input-bordered join-item w-full"
-                                data-bind="identifier"
-                                data-on:input__debounce.200ms="@get('/api/search'); $searchIndex = -1; $searchResultCount = 0; $selectedIdentifier = ''"
-                            />
-                            <button
-                                class="btn btn-primary join-item"
-                                data-attr:disabled="$identifier == ''"
-                                data-on:click="@post('/api/enqueue'); $identifier = ''"
-                            >
-                                Enqueue
-                            </button>
+                    <div class="join w-full">
+                        <div class="dropdown flex-grow join-item">
+                            <div tabindex="0" class="w-full">
+                                <input
+                                    type="text"
+                                    placeholder="YouTube URL or Search Query"
+                                    class="input input-bordered w-full"
+                                    data-bind="identifier"
+                                    data-on:input__debounce.200ms="@get('/api/search'); $searchIndex = -1; $searchResultCount = 0; $selectedIdentifier = ''"
+                                    data-on:keydown="
+                                    (() => {
+                                        if (evt.keyCode === 40 && $searchResultCount > 0) {
+                                            $searchIndex = ($searchIndex + 1) % $searchResultCount;
+                                            $selectedIdentifier = document.querySelector('[data-search-index=&quot;' + $searchIndex + '&quot;]')?.dataset?.identifier || '';
+                                        } else if (evt.keyCode === 38 && $searchResultCount > 0) {
+                                            $searchIndex = ($searchIndex - 1 + $searchResultCount) % $searchResultCount;
+                                            $selectedIdentifier = document.querySelector('[data-search-index=&quot;' + $searchIndex + '&quot;]')?.dataset?.identifier || '';
+                                        } else if (evt.keyCode === 13 && $identifier !== '') {
+                                            if ($searchIndex >= 0 && $searchResultCount > 0) {
+                                                $identifier = $selectedIdentifier;
+                                                @post('/api/enqueue');
+                                            } else {
+                                                @post('/api/enqueue');
+                                            }
+                                            $identifier = '';
+                                            $searchIndex = -1;
+                                            $selectedIdentifier = '';
+                                        } else if (evt.keyCode === 27) {
+                                            $identifier = '';
+                                            $searchIndex = -1;
+                                            $selectedIdentifier = '';
+                                        }
+                                    })()"
+                                />
+                            </div>
+
+                            <ul
+                                id="search-results"
+                                data-attr:hidden="$identifier == ''"
+                                class="dropdown-content list menu bg-base-200 rounded-box w-full"
+                            ></ul>
                         </div>
 
-                        <ul
-                            tabindex="-1"
-                            id="search-results"
-                            data-attr:hidden="$identifier == ''"
-                            class="dropdown-content list menu bg-base-200 rounded-box w-full"
-                        ></ul>
+                        <button
+                            class="btn btn-primary join-item"
+                            data-attr:disabled="$identifier == ''"
+                            data-on:click="@post('/api/enqueue'); $identifier = ''"
+                        >
+                            Enqueue
+                        </button>
                     </div>
                     <div class="flex gap-2 join place-content-center">
                         <button

@@ -40,7 +40,7 @@ type ResultTrack struct {
 }
 
 func (b *Bogus) loadTracks(identifier string) (ResultTrack, error) {
-	if !urlPattern.MatchString(identifier) && !searchPattern.MatchString(identifier) {
+	if !IsURLIdentifier(identifier) && !searchPattern.MatchString(identifier) {
 		identifier = lavalink.SearchTypeYouTubeMusic.Apply(identifier)
 	}
 
@@ -315,7 +315,7 @@ func (b *Bogus) search(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// queue := b.Queues.Get(b.currentGuildID)
-	if !urlPattern.MatchString(identifier) && !searchPattern.MatchString(identifier) {
+	if !IsURLIdentifier(identifier) && !searchPattern.MatchString(identifier) {
 		switch tracks.Kind {
 		case TrackResultPlaylist:
 		case TrackResultSingle, TrackResultMultiple:
