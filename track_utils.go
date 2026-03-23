@@ -2,7 +2,6 @@ package main
 
 import (
 	"regexp"
-	"time"
 
 	"github.com/disgoorg/disgolink/v3/lavalink"
 )
@@ -11,8 +10,6 @@ var (
 	urlPattern    = regexp.MustCompile("^https?://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]?")
 	searchPattern = regexp.MustCompile(`^(.{2})search:(.+)`)
 )
-
-const defaultLoadTimeout = 10 * time.Second
 
 func PrepareIdentifier(identifier string) string {
 	if !urlPattern.MatchString(identifier) && !searchPattern.MatchString(identifier) {
