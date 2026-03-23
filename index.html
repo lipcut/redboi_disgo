@@ -785,12 +785,12 @@
             <section class="card bg-base-100 shadow-sm">
                 <div class="card-body space-y-4">
                     <div class="join w-full">
-                        <div class="dropdown flex-grow join-item">
+                        <div class="dropdown flex-grow">
                             <div tabindex="0" class="w-full">
                                 <input
                                     type="text"
                                     placeholder="YouTube URL or Search Query"
-                                    class="input input-bordered w-full"
+                                    class="input input-bordered w-full join-item"
                                     data-bind="identifier"
                                     data-on:input__debounce.200ms="@get('/api/search'); $searchIndex = -1; $searchResultCount = 0; $selectedIdentifier = ''"
                                     data-on:keydown="
