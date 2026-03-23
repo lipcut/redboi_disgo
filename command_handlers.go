@@ -302,8 +302,8 @@ func (b *Bot) loadTrack(event *events.ApplicationCommandInteractionCreate, data 
 	identifier := data.String("identifier")
 	if source, ok := data.OptString("source"); ok {
 		identifier = lavalink.SearchType(source).Apply(identifier)
-	} else if !urlPattern.MatchString(identifier) && !searchPattern.MatchString(identifier) {
-		identifier = lavalink.SearchTypeYouTubeMusic.Apply(identifier)
+	} else {
+		identifier = PrepareIdentifier(identifier)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
