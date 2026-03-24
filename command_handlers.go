@@ -36,12 +36,6 @@ var (
 
 func (b *Bot) shuffle(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
 	queue := b.Queues.Get(*event.GuildID())
-	if queue == nil {
-		return event.CreateMessage(discord.MessageCreate{
-			Content: "No player found",
-		})
-	}
-
 	queue.Shuffle()
 	return event.CreateMessage(discord.MessageCreate{
 		Content: "Queue shuffled",
@@ -142,12 +136,6 @@ func (b *Bot) skip(event *events.ApplicationCommandInteractionCreate, data disco
 
 func (b *Bot) queueType(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
 	queue := b.Queues.Get(*event.GuildID())
-	if queue == nil {
-		return event.CreateMessage(discord.MessageCreate{
-			Content: "No player found",
-		})
-	}
-
 	queue.Type = QueueType(data.String("type"))
 	return event.CreateMessage(discord.MessageCreate{
 		Content: fmt.Sprintf("Queue type set to `%s`", queue.Type),
@@ -156,12 +144,6 @@ func (b *Bot) queueType(event *events.ApplicationCommandInteractionCreate, data 
 
 func (b *Bot) clearQueue(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
 	queue := b.Queues.Get(*event.GuildID())
-	if queue == nil {
-		return event.CreateMessage(discord.MessageCreate{
-			Content: "No player found",
-		})
-	}
-
 	queue.Clear()
 	return event.CreateMessage(discord.MessageCreate{
 		Content: "Queue cleared",
@@ -170,12 +152,6 @@ func (b *Bot) clearQueue(event *events.ApplicationCommandInteractionCreate, data
 
 func (b *Bot) queue(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
 	queue := b.Queues.Get(*event.GuildID())
-	if queue == nil {
-		return event.CreateMessage(discord.MessageCreate{
-			Content: "No player found",
-		})
-	}
-
 	if len(queue.Tracks) == 0 {
 		return event.CreateMessage(discord.MessageCreate{
 			Content: "No tracks in queue",

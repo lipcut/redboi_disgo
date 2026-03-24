@@ -33,6 +33,8 @@ func (b *Bot) onTrackEnd(player disgolink.Player, event lavalink.TrackEndEvent) 
 		nextTrack lavalink.Track
 		err       error
 	)
+	updateOption := lavalink.WithNullTrack()
+
 	switch queue.Type {
 	case QueueTypeNormal:
 		nextTrack, err = queue.Next()
@@ -46,10 +48,13 @@ func (b *Bot) onTrackEnd(player disgolink.Player, event lavalink.TrackEndEvent) 
 	}
 
 	if err != nil {
-		slog.Error("", slog.Any("err", err))
+		slog.Info("no next track available, stopping player", slog.Any("err", err))
+	} else {
+		updateOption = lavalink.WithTrack(nextTrack)
 	}
-	if err := player.Update(context.TODO(), lavalink.WithTrack(nextTrack)); err != nil {
-		slog.Error("Failed to play next track", slog.Any("err", err))
+
+	if err := player.Update(context.TODO(), updateOption); err != nil {
+		slog.Error("failed to update player on track end", slog.Any("err", err))
 	}
 	b.publish()
 }

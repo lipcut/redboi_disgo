@@ -27,9 +27,7 @@
             const wsMaxDelay = 30000;
 
             function dial() {
-                const conn = new WebSocket(
-                    `wss://${location.host}/api/subscribe`,
-                );
+                const conn = new WebSocket(`/api/subscribe`);
 
                 conn.addEventListener("close", (event) => {
                     if (event.code !== 1001) {
@@ -71,12 +69,12 @@
         <main
             class="container mx-auto max-w-3xl px-4 py-8 space-y-6"
             data-signals="{identifier: '', searchIndex: -1, searchResultCount: 0, selectedIdentifier: ''}"
-            data-on-intersect="@get('/api/sync')"
         >
             <!-- Magic buttons (not visible) -->
             <button
                 id="ds-sync-trigger"
                 style="display: none"
+                data-init="@get('/api/sync')"
                 data-on:click="@get('/api/sync')"
             ></button>
 

@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
@@ -23,10 +22,6 @@ import (
 	"github.com/disgoorg/godave"
 	"github.com/disgoorg/snowflake/v2"
 )
-
-func init() {
-	rand.New(rand.NewSource(time.Now().UnixNano()))
-}
 
 type QueueType string
 
@@ -170,7 +165,16 @@ func (b *Bot) onVoiceServerUpdate(event *events.VoiceServerUpdate) {
 }
 
 func (b *Bot) publish() {
-	b.PublishClient.Post("http://localhost:8080/api/publish", "text/plain", strings.NewReader("update!"))
+	resp, err := b.PublishClient.Post("http://localhost:8080/api/publish", "text/plain", strings.NewReader("update!"))
+	if err != nil {
+		slog.Error("failed to publish websocket update", slog.Any("err", err))
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusAccepted {
+		slog.Warn("unexpected publish response status", slog.Int("status", resp.StatusCode))
+	}
 }
 
 func (b *Bot) requirePlayer(guildID snowflake.ID) (disgolink.Player, bool) {
@@ -232,6 +236,7 @@ func discordBot(token string) (*Bot, error) {
 		"clear-queue": robot.clearQueue,
 		"queue-type":  robot.queueType,
 		"shuffle":     robot.shuffle,
+		"volume":      robot.volume,
 		"seek":        robot.seek,
 		"skip":        robot.skip,
 		"bass-boost":  robot.bassBoost,
