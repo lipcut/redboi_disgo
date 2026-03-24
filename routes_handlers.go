@@ -94,16 +94,24 @@ func (b *Bogus) nowPlaying(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
+		artwork := `<div class="size-14 rounded-box bg-base-300 shrink-0"></div>`
+		if track.Info.ArtworkURL != nil {
+			artwork = fmt.Sprintf(`<img class="mask mask-squircle size-14 object-cover object-center shrink-0" src="%v"/>`, *track.Info.ArtworkURL)
+		}
+
 		err := sse.PatchElements(fmt.Sprintf(`
 				<h2
-                   class="text-lg card-title opacity-90"
-                   id="nowPlayingSong"
-               >
-					<div class="text-nowrap">%v</div>
-					<div class="uppercase font-semibold opacity-60 truncate">%v</div>
+				   class="text-lg card-title opacity-90 flex items-center gap-3"
+				   id="nowPlayingSong"
+				>
+					%s
+					<div class="min-w-0">
+						<div class="truncate">%v</div>
+						<div class="uppercase font-semibold opacity-60 truncate">%v</div>
+					</div>
 				</h2>
 				`,
-			track.Info.Author, track.Info.Title))
+			artwork, track.Info.Author, track.Info.Title))
 		if err != nil {
 			slog.Error("fail to patch nowPlaying State", slog.Any("err", err))
 			return
@@ -118,7 +126,7 @@ func (b *Bogus) queue(w http.ResponseWriter, r *http.Request) {
 		trackID := idx + 1
 		element := fmt.Sprintf(`
 			<li class="list-row">
-		    <div><img class="mask mask-squircle size-10" src="%v"/></div>
+		    <div><img class="mask mask-squircle size-10 object-cover object-center" src="%v"/></div>
 		    <div>
 				<div>%v</div>
 				<div class="text-xs uppercase font-semibold opacity-60">%v</div>
@@ -314,7 +322,6 @@ func (b *Bogus) search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// queue := b.Queues.Get(b.currentGuildID)
 	if !IsURLIdentifier(identifier) && !searchPattern.MatchString(identifier) {
 		switch tracks.Kind {
 		case TrackResultPlaylist:
@@ -333,7 +340,7 @@ func (b *Bogus) search(w http.ResponseWriter, r *http.Request) {
 					data-class:bg-neutral="$searchIndex === %d"
 					data-on:click="$searchIndex = %d; $identifier = el.dataset.identifier; @post('/api/enqueue'); $identifier = ''; $searchIndex = -1"
 				>
-					<div><img class="mask mask-squircle size-6" src="%v"/></div>
+					<div><img class="mask mask-squircle size-6 object-cover object-center" src="%v"/></div>
 					<div class="text-sm">
 						<div>%v</div>
 						<div class="text-xs uppercase font-semibold opacity-60 truncate">%v</div>
