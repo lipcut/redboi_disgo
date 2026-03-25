@@ -252,12 +252,13 @@ func (b *Bogus) skip(w http.ResponseWriter, r *http.Request) {
 		updateOption = lavalink.WithTrack(track)
 	}
 
-	err = player.Update(context.TODO(), updateOption)
+	err = player.Update(context.TODO(), updateOption, lavalink.WithPaused(false))
 	if err != nil {
 		slog.Error("failed to skip the song", slog.Any("err", err))
 		return
 	}
 
+	b.checkPaused(w, r)
 	b.nowPlaying(w, r)
 	b.queue(w, r)
 	b.publish()

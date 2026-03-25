@@ -45,7 +45,6 @@
                     wsRetryCount = 0;
                 });
 
-                // This is where we handle messages received.
                 conn.addEventListener("message", async (event) => {
                     if (typeof event.data !== "string") {
                         console.error(
@@ -78,7 +77,6 @@
                 data-on:click="@get('/api/sync')"
             ></button>
 
-            <!--style="display: none"-->
             <header class="flex items-center justify-between gap-3">
                 <h1 class="text-4xl font-bold">RedBoi</h1>
                 <!-- Theme menu button -->
@@ -790,7 +788,7 @@
                                     placeholder="YouTube URL or Search Query"
                                     class="input input-bordered w-full join-item"
                                     data-bind="identifier"
-                                    data-on:input__debounce.200ms="@get('/api/search'); $searchIndex = -1; $searchResultCount = 0; $selectedIdentifier = ''"
+                                    data-on:input__debounce.350ms="@get('/api/search'); $searchIndex = -1; $searchResultCount = 0; $selectedIdentifier = ''"
                                     data-on:keydown="
                                     (() => {
                                         if (evt.keyCode === 40 && $searchResultCount > 0) {
