@@ -342,12 +342,12 @@ func (b *Bogus) search(w http.ResponseWriter, r *http.Request) {
 					data-on:click="$searchIndex = %d; $identifier = el.dataset.identifier; @post('/api/enqueue'); $identifier = ''; $searchIndex = -1"
 				>
 					<div><img class="mask mask-squircle size-6 object-cover object-center" src="%v"/></div>
-					<div class="text-sm">
+					<div class="text-sm" data-class:text-neutral-content="$searchIndex === %d">
 						<div>%v</div>
 						<div class="text-xs uppercase font-semibold opacity-60 truncate">%v</div>
 					</div>
 				</li>`,
-					idx, *track.Info.URI, idx, idx, *track.Info.ArtworkURL, info.Author, info.Title)
+					idx, *track.Info.URI, idx, idx, *track.Info.ArtworkURL, idx, info.Author, info.Title)
 			}
 			sse.PatchElements(resultHTML, datastar.WithSelectorID("search-results"), datastar.WithModeInner())
 			sse.MarshalAndPatchSignals(map[string]any{
