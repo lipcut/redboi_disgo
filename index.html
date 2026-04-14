@@ -830,6 +830,13 @@
                         >
                             Enqueue
                         </button>
+                        <button
+                            class="btn btn-warning join-item"
+                            data-attr:disabled="$identifier == ''"
+                            data-on:click="@post('/api/play'); $identifier = ''"
+                        >
+                            Play
+                        </button>
                     </div>
                     <div class="flex gap-2 join place-content-center">
                         <button

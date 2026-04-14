@@ -59,6 +59,10 @@ func (q *Queue) Append(track ...lavalink.Track) {
 	q.Tracks = append(q.Tracks, track...)
 }
 
+func (q *Queue) Prepend(track ...lavalink.Track) {
+	q.Tracks = append(track, q.Tracks...)
+}
+
 func (q *Queue) Next() (lavalink.Track, error) {
 	if len(q.Tracks) == 0 {
 		return lavalink.Track{}, errors.New("Queue is empty...")

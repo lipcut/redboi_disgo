@@ -359,3 +359,39 @@ func (b *Bogus) search(w http.ResponseWriter, r *http.Request) {
 
 	}
 }
+
+func (b *Bogus) play(w http.ResponseWriter, r *http.Request) {
+	player, ok := b.requirePlayer(b.currentGuildID)
+	if !ok {
+		return
+	}
+
+	store := &Store{}
+	if err := datastar.ReadSignals(r, store); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	tracks, err := b.loadTracks(store.Identifier)
+	if err != nil {
+		slog.Error("failed to play", slog.Any("err", err))
+		return
+	}
+
+	queue := b.Queues.Get(b.currentGuildID)
+
+	switch tracks.Kind {
+	case TrackResultPlaylist:
+		playlist := tracks.Tracks
+		player.Update(context.TODO(), lavalink.WithTrack(playlist[0]))
+		queue.Prepend(playlist[1:]...)
+	case TrackResultSingle, TrackResultMultiple:
+		track := tracks.Tracks[0]
+		player.Update(context.TODO(), lavalink.WithTrack(track))
+	}
+
+	b.nowPlaying(w, r)
+	b.queue(w, r)
+	b.publish()
+
+}
