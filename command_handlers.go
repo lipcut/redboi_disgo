@@ -168,17 +168,6 @@ func (b *Bot) queue(event *events.ApplicationCommandInteractionCreate, data disc
 	})
 }
 
-func (b *Bot) players(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
-	var description string
-	b.Lavalink.ForPlayers(func(player disgolink.Player) {
-		description += fmt.Sprintf("GuildID: `%s`\n", player.GuildID())
-	})
-
-	return event.CreateMessage(discord.MessageCreate{
-		Content: fmt.Sprintf("Players:\n%s", description),
-	})
-}
-
 func (b *Bot) togglePlay(event *events.ApplicationCommandInteractionCreate, data discord.SlashCommandInteractionData) error {
 	player, ok := b.requirePlayer(*event.GuildID())
 	if !ok {

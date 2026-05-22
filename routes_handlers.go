@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -65,7 +64,7 @@ func (b *Bogus) loadTracks(identifier string) (ResultTrack, error) {
 			result.Tracks = slices.Concat(result.Tracks, tracks)
 		},
 		func() {
-			resultError = errors.New(fmt.Sprintf("Nothing found for: `%s`", identifier))
+			resultError = fmt.Errorf("Nothing found for: `%s`", identifier)
 		},
 		func(err error) {
 			resultError = err
@@ -383,11 +382,19 @@ func (b *Bogus) play(w http.ResponseWriter, r *http.Request) {
 	switch tracks.Kind {
 	case TrackResultPlaylist:
 		playlist := tracks.Tracks
-		player.Update(context.TODO(), lavalink.WithTrack(playlist[0]))
-		queue.Prepend(playlist[1:]...)
+		if player.Track() == nil {
+			player.Update(context.TODO(), lavalink.WithTrack(playlist[0]))
+			queue.Prepend(playlist[1:]...)
+		} else {
+			queue.Prepend(playlist...)
+		}
 	case TrackResultSingle, TrackResultMultiple:
 		track := tracks.Tracks[0]
-		player.Update(context.TODO(), lavalink.WithTrack(track))
+		if player.Track() == nil {
+			player.Update(context.TODO(), lavalink.WithTrack(track))
+		} else {
+			queue.Prepend(track)
+		}
 	}
 
 	b.nowPlaying(w, r)

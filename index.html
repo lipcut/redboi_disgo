@@ -32,7 +32,7 @@
                 conn.addEventListener("close", (event) => {
                     if (event.code !== 1001) {
                         const delay = Math.min(
-                            1000 * Math.pow(2, wsRetryCount),
+                            1000 * 2 ** wsRetryCount,
                             wsMaxDelay,
                         );
                         const jitter = Math.random() * 500;
@@ -40,7 +40,7 @@
                         setTimeout(dial, delay + jitter);
                     }
                 });
-                conn.addEventListener("open", (event) => {
+                conn.addEventListener("open", (_) => {
                     console.info("websocket connected");
                     wsRetryCount = 0;
                 });
@@ -71,6 +71,7 @@
         >
             <!-- Magic buttons (not visible) -->
             <button
+                type="button"
                 id="ds-sync-trigger"
                 style="display: none"
                 data-init="@get('/api/sync')"
@@ -89,7 +90,9 @@
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
+                            aria-label="dropdown"
                         >
+                            <title>Theme dropdown</title>
                             <path
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
@@ -824,6 +827,7 @@
                         </div>
 
                         <button
+                            type="button"
                             class="btn btn-primary join-item"
                             data-attr:disabled="$identifier == ''"
                             data-on:click="@post('/api/enqueue'); $identifier = ''"
@@ -831,6 +835,7 @@
                             Enqueue
                         </button>
                         <button
+                            type="button"
                             class="btn btn-warning join-item"
                             data-attr:disabled="$identifier == ''"
                             data-on:click="@post('/api/play'); $identifier = ''"
@@ -840,23 +845,27 @@
                     </div>
                     <div class="flex gap-2 join place-content-center">
                         <button
+                            type="button"
                             class="btn btn-outline join-item"
                             data-on:click="@get('/api/toggle-play')"
                             id="play-pause-btn"
                         ></button>
                         <button
+                            type="button"
                             class="btn btn-outline join-item"
                             data-on:click="@get('/api/skip')"
                         >
                             Next
                         </button>
                         <button
+                            type="button"
                             class="btn btn-warning btn-outline join-item"
                             data-on:click="@get('/api/stop')"
                         >
                             Stop
                         </button>
                         <button
+                            type="button"
                             class="btn btn-error btn-outline join-item"
                             data-on:click="@post('/api/clear')"
                         >
