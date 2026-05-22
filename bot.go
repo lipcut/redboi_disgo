@@ -122,11 +122,12 @@ func (q Guild2Queue) Delete(guildID snowflake.ID) {
 }
 
 type Bot struct {
-	Client          bot.Client
-	Lavalink        disgolink.Client
-	CommandHandlers map[string]func(*events.ApplicationCommandInteractionCreate, discord.SlashCommandInteractionData) error
-	Queues          Guild2Queue
-	PublishClient   *http.Client // for publishing updates to the websocket
+	Client              bot.Client
+	Lavalink            disgolink.Client
+	CommandHandlers     map[string]func(*events.ApplicationCommandInteractionCreate, discord.SlashCommandInteractionData) error
+	Queues              Guild2Queue
+	PublishClient       *http.Client         // for publishing updates to the websocket
+	ChannelToHumanCount map[snowflake.ID]int // tracking how many people left in voice channels to decide whether to disconnect itself or not
 }
 
 func (b *Bot) onApplicationCommand(event *events.ApplicationCommandInteractionCreate) {
@@ -168,6 +169,33 @@ func (b *Bot) onVoiceServerUpdate(event *events.VoiceServerUpdate) {
 	b.Lavalink.OnVoiceServerUpdate(context.TODO(), event.GuildID, event.Token, *event.Endpoint)
 }
 
+func (b *Bot) checkVoiceChannelState(event *events.GuildVoiceStateUpdate) {
+	moveToChannelID, moveToUserID := event.VoiceState.ChannelID, event.VoiceState.UserID
+	moveFromChannelID, moveFromUserID := event.OldVoiceState.ChannelID, event.OldVoiceState.UserID
+	if moveToChannelID != nil && moveToUserID != b.Client.ApplicationID {
+		b.ChannelToHumanCount[*moveToChannelID]++
+	}
+
+	if moveFromChannelID != nil && moveFromUserID != b.Client.ApplicationID {
+		b.ChannelToHumanCount[*moveFromChannelID]--
+	}
+
+	robot, ok := b.Client.Caches.VoiceState(guildID, b.Client.ApplicationID)
+
+	if !ok && robot.ChannelID == nil {
+		return
+	}
+
+	if count, ok := b.ChannelToHumanCount[*robot.ChannelID]; ok && count == 0 {
+		if err := b.Client.UpdateVoiceState(context.TODO(), guildID, nil, false, false); err != nil {
+			slog.Error("Error while disconnecting: `%s`", slog.Any("err", err))
+			return
+		}
+		slog.Info("nobody left in here, I'm out", slog.Any("channelID", *robot.ChannelID))
+	}
+
+}
+
 func (b *Bot) publish() {
 	resp, err := b.PublishClient.Post("http://localhost:8080/api/publish", "text/plain", strings.NewReader("update!"))
 	if err != nil {
@@ -191,8 +219,9 @@ func (b *Bot) requirePlayer(guildID snowflake.ID) (disgolink.Player, bool) {
 
 func discordBot(token string) (*Bot, error) {
 	robot := Bot{
-		Queues:        make(map[snowflake.ID]*Queue),
-		PublishClient: &http.Client{},
+		ChannelToHumanCount: make(map[snowflake.ID]int),
+		Queues:              make(map[snowflake.ID]*Queue),
+		PublishClient:       &http.Client{},
 	}
 
 	client, err := disgo.New(token,
@@ -205,6 +234,7 @@ func discordBot(token string) (*Bot, error) {
 		bot.WithEventListenerFunc(robot.onApplicationCommand),
 		bot.WithEventListenerFunc(robot.onVoiceStateUpdate),
 		bot.WithEventListenerFunc(robot.onVoiceServerUpdate),
+		bot.WithEventListenerFunc(robot.checkVoiceChannelState),
 		bot.WithVoiceManagerConfigOpts(
 			voice.WithDaveSessionCreateFunc(godave.NewNoopSession),
 		),
@@ -235,7 +265,6 @@ func discordBot(token string) (*Bot, error) {
 		"now-playing": robot.nowPlaying,
 		"stop":        robot.stop,
 		"disconnect":  robot.disconnect,
-		"players":     robot.players,
 		"queue":       robot.queue,
 		"clear-queue": robot.clearQueue,
 		"queue-type":  robot.queueType,
