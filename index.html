@@ -67,7 +67,7 @@
     >
         <main
             class="container mx-auto max-w-3xl px-4 py-8 space-y-6"
-            data-signals="{identifier: '', searchIndex: -1, searchResultCount: 0, selectedIdentifier: ''}"
+            data-signals="{identifier: '', searchIndex: -1, searchResultCount: 0, selectedIdentifier: '', trackCount: 0}"
         >
             <!-- Magic buttons (not visible) -->
             <button
@@ -785,14 +785,13 @@
                 <div class="card-body space-y-4">
                     <div class="join w-full">
                         <div class="dropdown flex-grow">
-                            <div tabindex="0" class="w-full">
-                                <input
-                                    type="text"
-                                    placeholder="YouTube URL or Search Query"
-                                    class="input input-bordered w-full join-item"
-                                    data-bind="identifier"
-                                    data-on:input__debounce.350ms="@get('/api/search'); $searchIndex = -1; $searchResultCount = 0; $selectedIdentifier = ''"
-                                    data-on:keydown="
+                            <input
+                                type="text"
+                                placeholder="YouTube URL or Search Query"
+                                class="input input-bordered w-full join-item"
+                                data-bind="identifier"
+                                data-on:input__debounce.350ms="@get('/api/search'); $searchIndex = -1; $searchResultCount = 0; $selectedIdentifier = ''"
+                                data-on:keydown="
                                     (() => {
                                         if (evt.keyCode === 40 && $searchResultCount > 0) {
                                             $searchIndex = ($searchIndex + 1) % $searchResultCount;
@@ -816,8 +815,7 @@
                                             $selectedIdentifier = '';
                                         }
                                     })()"
-                                />
-                            </div>
+                            />
 
                             <ul
                                 id="search-results"
@@ -840,7 +838,7 @@
                             data-attr:disabled="$identifier == ''"
                             data-on:click="@post('/api/play'); $identifier = ''"
                         >
-                            Play
+                            Interrupt
                         </button>
                     </div>
                     <div class="flex gap-2 join place-content-center">
@@ -878,11 +876,45 @@
             <!-- Queue -->
             <section class="card bg-base-100 shadow-sm">
                 <div class="card-body">
-                    <h3 class="card-title text-lg">Queue</h3>
-                    <ul
-                        class="list bg-base-100 rounded-box shadow-md"
-                        id="queue"
-                    ></ul>
+                    <div class="tabs tabs-lift">
+                        <input
+                            type="radio"
+                            name="the_tab"
+                            class="tab text-lg font-bold"
+                            aria-label="Queue"
+                            checked="checked"
+                        />
+                        <div
+                            class="tab-content bg-base-100 border-base-300 p-6"
+                        >
+                            <div
+                                data-attr:hidden="$trackCount == 0"
+                                class="text-md font-bold"
+                            >
+                                track count :
+                                <span data-text="$trackCount"></span>
+                            </div>
+                            <ul
+                                class="list bg-base-100 rounded-box shadow-md"
+                                id="queue"
+                            ></ul>
+                        </div>
+
+                        <input
+                            type="radio"
+                            name="the_tab"
+                            class="tab text-lg font-bold"
+                            aria-label="History"
+                        />
+                        <div
+                            class="tab-content bg-base-100 border-base-300 p-6"
+                        >
+                            <ul
+                                class="list bg-base-100 rounded-box shadow-md"
+                                id="history"
+                            ></ul>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>

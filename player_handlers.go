@@ -20,6 +20,7 @@ func (b *Bot) onPlayerResume(player disgolink.Player, event lavalink.PlayerResum
 
 func (b *Bot) onTrackStart(player disgolink.Player, event lavalink.TrackStartEvent) {
 	slog.Info("track started", slog.Any("event", event))
+	b.HistoryTracks[event.GuildID()].Append(event.Track)
 	b.publish()
 }
 

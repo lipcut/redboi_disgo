@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"iter"
 	"log/slog"
 	"math/rand"
 	"net/http"
@@ -121,11 +122,53 @@ func (q Guild2Queue) Delete(guildID snowflake.ID) {
 	delete(q, guildID)
 }
 
+type History struct {
+	Index  int // indicating the latest track position + 1
+	Len    int
+	Tracks [50]lavalink.Track
+}
+
+func (h *History) Append(track lavalink.Track) {
+	h.Tracks[(h.Index % len(h.Tracks))] = track
+	h.Index = (h.Index + 1) % len(h.Tracks)
+	h.Len = min(h.Len+1, 50)
+}
+
+func (h *History) Iter() iter.Seq2[int, lavalink.Track] {
+	return func(yield func(int, lavalink.Track) bool) {
+		for i := 1; i <= h.Len; i++ {
+			track := h.Tracks[(h.Index-i)%len(h.Tracks)]
+			if !yield(i-1, track) {
+				return
+			}
+		}
+	}
+}
+
+type Guild2History map[snowflake.ID]*History
+
+func (h Guild2History) Get(guildID snowflake.ID) *History {
+	history, ok := h[guildID]
+	if !ok {
+		history = &History{
+			Index:  0,
+			Tracks: [50]lavalink.Track{},
+		}
+		h[guildID] = history
+	}
+	return history
+}
+
+func (h Guild2History) Delete(guildID snowflake.ID) {
+	delete(h, guildID)
+}
+
 type Bot struct {
 	Client              bot.Client
 	Lavalink            disgolink.Client
 	CommandHandlers     map[string]func(*events.ApplicationCommandInteractionCreate, discord.SlashCommandInteractionData) error
 	Queues              Guild2Queue
+	HistoryTracks       Guild2History
 	PublishClient       *http.Client         // for publishing updates to the websocket
 	ChannelToHumanCount map[snowflake.ID]int // tracking how many people left in voice channels to decide whether to disconnect itself or not
 }
@@ -221,6 +264,7 @@ func discordBot(token string) (*Bot, error) {
 	robot := Bot{
 		ChannelToHumanCount: make(map[snowflake.ID]int),
 		Queues:              make(map[snowflake.ID]*Queue),
+		HistoryTracks:       make(map[snowflake.ID]*History),
 		PublishClient:       &http.Client{},
 	}
 

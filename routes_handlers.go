@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/disgoorg/disgolink/v3/disgolink"
@@ -23,6 +24,7 @@ type Bogus struct {
 
 type Store struct {
 	Identifier string `json:"identifier"`
+	TrackCount int    `json:"trackCount"`
 }
 
 type TrackResultKind = int
@@ -120,10 +122,10 @@ func (b *Bogus) nowPlaying(w http.ResponseWriter, r *http.Request) {
 
 func (b *Bogus) queue(w http.ResponseWriter, r *http.Request) {
 	queue := b.Queues.Get(b.currentGuildID)
-	var elements string
+	elements := strings.Builder{}
 	for idx, track := range queue.Tracks {
 		trackID := idx + 1
-		element := fmt.Sprintf(`
+		fmt.Fprintf(&elements, `
 			<li class="list-row">
 		    <div><img class="mask mask-squircle size-10 object-cover object-center" src="%v"/></div>
 		    <div>
@@ -135,15 +137,22 @@ func (b *Bogus) queue(w http.ResponseWriter, r *http.Request) {
 			</button>
 			</li>
 			`, *track.Info.ArtworkURL, track.Info.Author, track.Info.Title, trackID)
-		elements += element
 	}
 
 	sse := datastar.NewSSE(w, r)
 	err := sse.PatchElements(
-		elements,
+		elements.String(),
 		datastar.WithModeInner(),
 		datastar.WithSelectorID("queue"),
 	)
+	if err != nil {
+		slog.Error("fail to patch queue status", slog.Any("err", err))
+		return
+	}
+
+	sse = datastar.NewSSE(w, r)
+	err = sse.PatchSignals(fmt.Appendf([]byte{}, `{trackCount: %d}`, len(queue.Tracks)))
+
 	if err != nil {
 		slog.Error("fail to patch queue status", slog.Any("err", err))
 		return
@@ -175,6 +184,7 @@ func (b *Bogus) checkPaused(w http.ResponseWriter, r *http.Request) {
 func (b *Bogus) sync(w http.ResponseWriter, r *http.Request) {
 	b.checkPaused(w, r)
 	b.nowPlaying(w, r)
+	b.history(w, r)
 	b.queue(w, r)
 }
 
@@ -327,28 +337,29 @@ func (b *Bogus) search(w http.ResponseWriter, r *http.Request) {
 		case TrackResultPlaylist:
 		case TrackResultSingle, TrackResultMultiple:
 			sse := datastar.NewSSE(w, r)
-			var resultHTML string
+			resultHTML := strings.Builder{}
 			for idx, track := range tracks.Tracks {
 				if idx >= 8 {
 					break
 				}
 				info := track.Info
-				resultHTML += fmt.Sprintf(`<li
-					class="list-row py-1"
-					data-search-index="%d"
-					data-identifier="%v"
-					data-class:bg-neutral="$searchIndex === %d"
-					data-on:click="$searchIndex = %d; $identifier = el.dataset.identifier; @post('/api/enqueue'); $identifier = ''; $searchIndex = -1"
-				>
-					<div><img class="mask mask-squircle size-6 object-cover object-center" src="%v"/></div>
-					<div class="text-sm" data-class:text-neutral-content="$searchIndex === %d">
-						<div>%v</div>
-						<div class="text-xs uppercase font-semibold opacity-60 truncate">%v</div>
-					</div>
-				</li>`,
+				fmt.Fprintf(&resultHTML,
+					`<li
+						class="list-row py-1"
+						data-search-index="%d"
+						data-identifier="%v"
+						data-class:bg-neutral="$searchIndex === %d"
+						data-on:click="$searchIndex = %d; $identifier = el.dataset.identifier; @post('/api/enqueue'); $identifier = ''; $searchIndex = -1"
+					>
+						<div><img class="mask mask-squircle size-6 object-cover object-center" src="%v"/></div>
+						<div class="text-sm" data-class:text-neutral-content="$searchIndex === %d">
+							<div>%v</div>
+							<div class="text-xs uppercase font-semibold opacity-60 truncate">%v</div>
+						</div>
+					</li>`,
 					idx, *track.Info.URI, idx, idx, *track.Info.ArtworkURL, idx, info.Author, info.Title)
 			}
-			sse.PatchElements(resultHTML, datastar.WithSelectorID("search-results"), datastar.WithModeInner())
+			sse.PatchElements(resultHTML.String(), datastar.WithSelectorID("search-results"), datastar.WithModeInner())
 			sse.MarshalAndPatchSignals(map[string]any{
 				"searchResultCount":  min(len(tracks.Tracks), 8),
 				"searchIndex":        0,
@@ -400,5 +411,46 @@ func (b *Bogus) play(w http.ResponseWriter, r *http.Request) {
 	b.nowPlaying(w, r)
 	b.queue(w, r)
 	b.publish()
+}
 
+func (b *Bogus) history(w http.ResponseWriter, r *http.Request) {
+
+	store := &Store{}
+	if err := datastar.ReadSignals(r, store); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	history := b.HistoryTracks.Get(b.currentGuildID)
+
+	resultHTML := strings.Builder{}
+	for _, track := range history.Iter() {
+		fmt.Fprintf(&resultHTML, `
+			<li class="list-row">
+		    <div><img class="mask mask-squircle size-10 object-cover object-center" src="%v"/></div>
+		    <div>
+				<div>%v</div>
+				<div class="text-xs uppercase font-semibold opacity-60">%v</div>
+			</div>
+			<button
+		 		class="btn btn-ghost btn-warning"
+				data-identifier="%v"
+				data-on:click="$identifier = el.dataset.identifier; @post('/api/enqueue'); $identifier = ''"
+			>
+				Enqueue
+			</button>
+			</li>
+			`, *track.Info.ArtworkURL, track.Info.Author, track.Info.Title, *track.Info.URI)
+	}
+	sse := datastar.NewSSE(w, r)
+	err := sse.PatchElements(
+		resultHTML.String(),
+		datastar.WithModeInner(),
+		datastar.WithSelectorID("history"),
+	)
+
+	if err != nil {
+		slog.Error("fail to patch queue status", slog.Any("err", err))
+		return
+	}
 }
