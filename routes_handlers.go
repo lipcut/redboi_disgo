@@ -76,6 +76,14 @@ func (b *Bogus) loadTracks(identifier string) (ResultTrack, error) {
 	return result, resultError
 }
 
+func (b *Bogus) homepage(w http.ResponseWriter, r *http.Request) {
+	if b.Lavalink.ExistingPlayer(b.currentGuildID) == nil {
+		http.ServeFile(w, r, "no_player.html")
+	} else {
+		http.ServeFile(w, r, "index.html")
+	}
+}
+
 func (b *Bogus) nowPlaying(w http.ResponseWriter, r *http.Request) {
 	player, ok := b.requirePlayer(b.currentGuildID)
 	if !ok {
@@ -414,7 +422,6 @@ func (b *Bogus) play(w http.ResponseWriter, r *http.Request) {
 }
 
 func (b *Bogus) history(w http.ResponseWriter, r *http.Request) {
-
 	store := &Store{}
 	if err := datastar.ReadSignals(r, store); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

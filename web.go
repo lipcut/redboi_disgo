@@ -19,16 +19,8 @@ func server(robot *Bot, guildID snowflake.ID) {
 		currentGuildID: guildID,
 	}
 
-	homepage := func(w http.ResponseWriter, r *http.Request) {
-		if bogus.Lavalink.ExistingPlayer(guildID) == nil {
-			http.ServeFile(w, r, "no_player.html")
-		} else {
-			http.ServeFile(w, r, "index.html")
-		}
-	}
-
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", homepage)
+	mux.HandleFunc("/", bogus.homepage)
 	mux.HandleFunc("/api/now-playing", bogus.nowPlaying)
 	mux.HandleFunc("/api/queue", bogus.queue)
 	mux.HandleFunc("/api/check-paused", bogus.checkPaused)
@@ -45,8 +37,9 @@ func server(robot *Bot, guildID snowflake.ID) {
 	WsHubSetup(mux)
 
 	slog.Info(fmt.Sprintf(
-		"Open your browser to: http://%s/",
+		"Open your browser to: http://%v/",
 		serverAddress,
 	))
+
 	log.Fatal(http.ListenAndServe(serverAddress, mux))
 }
