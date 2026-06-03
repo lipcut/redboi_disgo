@@ -137,7 +137,7 @@ func (h *History) Append(track lavalink.Track) {
 func (h *History) Iter() iter.Seq2[int, lavalink.Track] {
 	return func(yield func(int, lavalink.Track) bool) {
 		for i := 1; i <= h.Len; i++ {
-			track := h.Tracks[(h.Index-i)%len(h.Tracks)]
+			track := h.Tracks[(h.Index-i+len(h.Tracks))%len(h.Tracks)]
 			if !yield(i-1, track) {
 				return
 			}
