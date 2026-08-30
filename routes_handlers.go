@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/disgoorg/disgolink/v3/disgolink"
@@ -352,28 +351,30 @@ func (b *Bogus) history(w http.ResponseWriter, r *http.Request) {
 
 	history := b.HistoryTracks.Get(b.currentGuildID)
 
-	resultHTML := strings.Builder{}
-	for _, track := range history.Iter() {
-		fmt.Fprintf(&resultHTML, `
-			<li class="list-row">
-		    <div><img class="mask mask-squircle size-10 object-cover object-center" src="%v"/></div>
-		    <div>
-				<div>%v</div>
-				<div class="text-xs uppercase font-semibold opacity-60">%v</div>
-			</div>
-			<button
-		 		class="btn btn-ghost btn-warning"
-				data-identifier="%v"
-				data-on:click="$identifier = el.dataset.identifier; @post('/api/enqueue'); $identifier = ''"
-			>
-				Enqueue
-			</button>
-			</li>
-			`, *track.Info.ArtworkURL, track.Info.Author, track.Info.Title, *track.Info.URI)
-	}
+	// resultHTML := strings.Builder{}
+	// for _, track := range history.Iter() {
+	// 	fmt.Fprintf(&resultHTML, `
+	// 		<li class="list-row">
+	// 	    <div><img class="mask mask-squircle size-10 object-cover object-center" src="%v"/></div>
+	// 	    <div>
+	// 			<div>%v</div>
+	// 			<div class="text-xs uppercase font-semibold opacity-60">%v</div>
+	// 		</div>
+	// 		<button
+	// 	 		class="btn btn-ghost btn-warning"
+	// 			data-identifier="%v"
+	// 			data-on:click="$identifier = el.dataset.identifier; @post('/api/enqueue'); $identifier = ''"
+	// 		>
+	// 			Enqueue
+	// 		</button>
+	// 		</li>
+	// 		`, *track.Info.ArtworkURL, track.Info.Author, track.Info.Title, *track.Info.URI)
+	// }
+
+	historyStatus := templ_componets.HistoryStatus(history.Iter())
 	sse := datastar.NewSSE(w, r)
-	err := sse.PatchElements(
-		resultHTML.String(),
+	err := sse.PatchElementTempl(
+		historyStatus,
 		datastar.WithModeInner(),
 		datastar.WithSelectorID("history"),
 	)
