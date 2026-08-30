@@ -13,6 +13,7 @@ import (
 	"github.com/disgoorg/disgolink/v3/disgolink"
 	"github.com/disgoorg/disgolink/v3/lavalink"
 	"github.com/disgoorg/snowflake/v2"
+	"github.com/lipcut/redboi_disgo/templ_componets"
 	"github.com/starfederation/datastar-go/datastar"
 )
 
@@ -87,69 +88,25 @@ func (b *Bogus) homepage(w http.ResponseWriter, r *http.Request) {
 func (b *Bogus) nowPlaying(w http.ResponseWriter, r *http.Request) {
 	player, ok := b.requirePlayer(b.currentGuildID)
 	if !ok {
+		slog.Error("cannot find player in %v:%v")
 		return
 	}
 	track := player.Track()
 	sse := datastar.NewSSE(w, r)
-	if track == nil {
-		err := sse.PatchElements(`
-				<h2
-                   class="text-lg card-title opacity-90"
-                   id="nowPlayingSong"
-               >Nothing Playing...</h2>
-				`)
-		if err != nil {
-			slog.Error("fail to patch nowPlaying State", slog.Any("err", err))
-			return
-		}
-	} else {
-		artwork := `<div class="size-14 rounded-box bg-base-300 shrink-0"></div>`
-		if track.Info.ArtworkURL != nil {
-			artwork = fmt.Sprintf(`<img class="mask mask-squircle size-14 object-cover object-center shrink-0" src="%v"/>`, *track.Info.ArtworkURL)
-		}
 
-		err := sse.PatchElements(fmt.Sprintf(`
-				<h2
-				   class="text-lg card-title opacity-90 flex items-center gap-3"
-				   id="nowPlayingSong"
-				>
-					%s
-					<div class="min-w-0">
-						<div class="truncate">%v</div>
-						<div class="uppercase font-semibold opacity-60 truncate">%v</div>
-					</div>
-				</h2>
-				`,
-			artwork, track.Info.Author, track.Info.Title))
-		if err != nil {
-			slog.Error("fail to patch nowPlaying State", slog.Any("err", err))
-			return
-		}
+	playStatus := templ_componets.PlayingStatus(track)
+	err := sse.PatchElementTempl(playStatus)
+	if err != nil {
+		slog.Error("fail to patch nowPlaying State", slog.Any("err", err))
 	}
 }
 
 func (b *Bogus) queue(w http.ResponseWriter, r *http.Request) {
 	queue := b.Queues.Get(b.currentGuildID)
-	elements := strings.Builder{}
-	for idx, track := range queue.Tracks {
-		trackID := idx + 1
-		fmt.Fprintf(&elements, `
-			<li class="list-row">
-		    <div><img class="mask mask-squircle size-10 object-cover object-center" src="%v"/></div>
-		    <div>
-				<div>%v</div>
-				<div class="text-xs uppercase font-semibold opacity-60">%v</div>
-			</div>
-			<button class="btn btn-ghost btn-error" data-on:click="@delete('/api/remove-track/%d')">
-				Remove
-			</button>
-			</li>
-			`, *track.Info.ArtworkURL, track.Info.Author, track.Info.Title, trackID)
-	}
-
+	queueStatus := templ_componets.QueueStatus(queue.Tracks)
 	sse := datastar.NewSSE(w, r)
-	err := sse.PatchElements(
-		elements.String(),
+	err := sse.PatchElementTempl(
+		queueStatus,
 		datastar.WithModeInner(),
 		datastar.WithSelectorID("queue"),
 	)
@@ -172,20 +129,11 @@ func (b *Bogus) checkPaused(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	message := "Pause"
-	if player.Paused() {
-		message = "Play"
-	}
+	playPause := templ_componets.PlayPause(player.Paused())
 	sse := datastar.NewSSE(w, r)
-	err := sse.PatchElementf(
-		`<button
-				class="btn btn-outline join-item"
-				data-on:click="@get('/api/toggle-play')"
-				id="play-pause-btn"
-			>%v</button>`, message)
+	err := sse.PatchElementTempl(playPause)
 	if err != nil {
 		slog.Error("fail to patch pause State", slog.Any("err", err))
-		return
 	}
 }
 
@@ -343,31 +291,11 @@ func (b *Bogus) search(w http.ResponseWriter, r *http.Request) {
 	if !IsURLIdentifier(identifier) && !searchPattern.MatchString(identifier) {
 		switch tracks.Kind {
 		case TrackResultPlaylist:
+
 		case TrackResultSingle, TrackResultMultiple:
 			sse := datastar.NewSSE(w, r)
-			resultHTML := strings.Builder{}
-			for idx, track := range tracks.Tracks {
-				if idx >= 8 {
-					break
-				}
-				info := track.Info
-				fmt.Fprintf(&resultHTML,
-					`<li
-						class="list-row py-1"
-						data-search-index="%d"
-						data-identifier="%v"
-						data-class:bg-neutral="$searchIndex === %d"
-						data-on:click="$searchIndex = %d; $identifier = el.dataset.identifier; @post('/api/enqueue'); $identifier = ''; $searchIndex = -1"
-					>
-						<div><img class="mask mask-squircle size-6 object-cover object-center" src="%v"/></div>
-						<div class="text-sm" data-class:text-neutral-content="$searchIndex === %d">
-							<div>%v</div>
-							<div class="text-xs uppercase font-semibold opacity-60 truncate">%v</div>
-						</div>
-					</li>`,
-					idx, *track.Info.URI, idx, idx, *track.Info.ArtworkURL, idx, info.Author, info.Title)
-			}
-			sse.PatchElements(resultHTML.String(), datastar.WithSelectorID("search-results"), datastar.WithModeInner())
+			searchResults := templ_componets.SearchResults(tracks.Tracks)
+			sse.PatchElementTempl(searchResults, datastar.WithSelectorID("search-results"), datastar.WithModeInner())
 			sse.MarshalAndPatchSignals(map[string]any{
 				"searchResultCount":  min(len(tracks.Tracks), 8),
 				"searchIndex":        0,
@@ -401,19 +329,13 @@ func (b *Bogus) play(w http.ResponseWriter, r *http.Request) {
 	switch tracks.Kind {
 	case TrackResultPlaylist:
 		playlist := tracks.Tracks
-		if player.Track() == nil {
-			player.Update(context.TODO(), lavalink.WithTrack(playlist[0]))
-			queue.Prepend(playlist[1:]...)
-		} else {
-			queue.Prepend(playlist...)
-		}
+		player.Update(context.TODO(), lavalink.WithTrack(playlist[0]))
+		queue.Prepend(playlist[1:]...)
+
 	case TrackResultSingle, TrackResultMultiple:
 		track := tracks.Tracks[0]
-		if player.Track() == nil {
-			player.Update(context.TODO(), lavalink.WithTrack(track))
-		} else {
-			queue.Prepend(track)
-		}
+		player.Update(context.TODO(), lavalink.WithTrack(track))
+
 	}
 
 	b.nowPlaying(w, r)

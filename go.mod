@@ -1,8 +1,9 @@
-module redboi_disgo
+module github.com/lipcut/redboi_disgo
 
-go 1.26.1
+go 1.27.0
 
 require (
+	github.com/a-h/templ v0.3.1020
 	github.com/coder/websocket v1.8.14
 	github.com/disgoorg/disgo v0.19.2
 	github.com/disgoorg/disgolink/v3 v3.1.0
