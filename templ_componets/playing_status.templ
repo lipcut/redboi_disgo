@@ -1,0 +1,33 @@
+package templ_componets
+
+import "github.com/disgoorg/disgolink/v3/lavalink"
+
+templ artwork(track *lavalink.Track) {
+	if track.Info.ArtworkURL != nil {
+		<div class="size-14 rounded-box bg-base-300 shrink-0"></div>
+	} else {
+		<img
+			class="mask mask-squircle size-14 object-cover object-center shrink-0"
+			src={ *track.Info.ArtworkURL }
+		/>
+	}
+}
+
+templ PlayingStatus(track *lavalink.Track) {
+	<h2
+	 class=" text-lg card-title opacity-90 flex items-center gap-3"
+	 id="nowPlayingSong"
+	>
+		if track == nil {
+			Nothing Playing...
+		} else {
+			@artwork(track)
+			<div class="min-w-0">
+				<div class="truncate">{ track.Info.Author }</div>
+				<div class="uppercase font-semibold opacity-60 truncate">
+					{ track.Info.Title }
+				</div>
+			</div>
+		}
+	</h2>
+}

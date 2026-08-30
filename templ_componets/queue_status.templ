@@ -1,0 +1,36 @@
+package templ_componets
+
+import (
+	"github.com/disgoorg/disgolink/v3/lavalink"
+)
+
+script handleDelete(idx int) {
+	@delete(`/api/remove-track/${idx + 1}`)
+}
+
+templ QueueStatus(tracks []lavalink.Track) {
+	for idx, track := range tracks {
+		<li class="list-row">
+			<div>
+				<img
+					class="mask mask-squircle size-10 object-cover object-center"
+					src={*track.Info.ArtworkURL}
+				/>
+			</div>
+
+			<div>
+     			<div>{ track.Info.Author }</div>
+        		<div class="text-xs uppercase font-semibold opacity-60">
+          			{ track.Info.Title }
+          		</div>
+    		</div>
+
+      		<button
+        		class="btn btn-ghost btn-error"
+        		data-on:click={ handleDelete(idx) }
+        	>
+         		Remove
+         	</button>
+		</li>
+	}
+}

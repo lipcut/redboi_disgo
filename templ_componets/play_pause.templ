@@ -1,0 +1,18 @@
+package templ_componets
+
+
+templ PlayPause(player_paused bool) {
+	{{
+		message := "Pause"
+		if player_paused {
+			message = "Play"
+		}
+	}}
+	<button
+		class="btn btn-outline join-item"
+		data-on:click="@get('/api/toggle-play')"
+		id="play-pause-btn"
+	>
+		{ message }
+	</button>
+}
